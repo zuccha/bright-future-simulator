@@ -29,6 +29,28 @@ const INNER_FORM_GROUP_PROPS = {
   borderLeftWidth: 2,
   paddingLeft: "$4",
 } as const;
+const DISTRIBUTION_INPUT_PROPS = {
+  flex: 1,
+  fontSize: "$sm",
+  min: 1,
+  max: 100,
+  size: "sm",
+  // type: "number",
+} as const;
+const LEFT_DISTRIBUTION_INPUT_PROPS = {
+  ...DISTRIBUTION_INPUT_PROPS,
+  borderRightRadius: 0,
+};
+const MIDDLE_DISTRIBUTION_INPUT_PROPS = {
+  ...DISTRIBUTION_INPUT_PROPS,
+  borderRadius: 0,
+  borderLeftWidth: 0,
+};
+const RIGHT_DISTRIBUTION_INPUT_PROPS = {
+  ...DISTRIBUTION_INPUT_PROPS,
+  borderLeftRadius: 0,
+  borderLeftWidth: 0,
+};
 
 const computeCirclesCount = (cardsCount: number): number => {
   if (cardsCount <= 0) return 0;
@@ -36,7 +58,27 @@ const computeCirclesCount = (cardsCount: number): number => {
   return Math.ceil((x % 2 == 0 ? x + 1 : x) / 2);
 };
 
+const computeTotalDeckDistribution = (
+  deckDistribution: DeckDistribution
+): number => {
+  return (
+    deckDistribution["1"] +
+    deckDistribution["2A"] +
+    deckDistribution["2B"] +
+    deckDistribution["3"] +
+    deckDistribution["4"]
+  );
+};
+
 type DeckGenerationType = "Custom" | "Random";
+
+type DeckDistribution = {
+  "1": number;
+  "2A": number;
+  "2B": number;
+  "3": number;
+  "4": number;
+};
 
 function ConfigurationPage() {
   const [errors, setErrors] = createSignal<string[]>([]);
@@ -51,8 +93,10 @@ function ConfigurationPage() {
     computeCirclesCount(cardsCount())
   );
   const [deckGenerationType, setDeckGenerationType] =
-    createSignal<DeckGenerationType>("Random");
+    createSignal<DeckGenerationType>("Custom");
   const [generatedDecksCount, setGeneratedDecksCount] = createSignal(1);
+  const [customDecksDistribution, setCustomDeckDistribution] =
+    createSignal<DeckDistribution>({ 1: 20, "2A": 20, "2B": 20, 3: 20, 4: 20 });
 
   const handleChangePlayersCount = (e: { target: HTMLInputElement }): void => {
     setPlayersCount(Number.parseInt(e.target.value) || 1);
@@ -81,6 +125,15 @@ function ConfigurationPage() {
     setGeneratedDecksCount(Number.parseInt(e.target.value) || 1);
   };
 
+  const handleChangeCustomDeckDistribution =
+    (key: keyof DeckDistribution) =>
+    (e: { target: HTMLInputElement }): void => {
+      setCustomDeckDistribution({
+        ...customDecksDistribution(),
+        [key]: Number.parseInt(e.target.value) || 1,
+      });
+    };
+
   const validate = (): string[] => {
     const errors: string[] = [];
     if (playersCount() <= 0) errors.push("Not enough players (min 1)");
@@ -88,6 +141,11 @@ function ConfigurationPage() {
       errors.push("Not enough cards in deck for all players");
     if (circlesCount() < computeCirclesCount(cardsCount()))
       errors.push("Not enought circles, not all cards can be played");
+    if (
+      deckGenerationType() == "Custom" &&
+      computeTotalDeckDistribution(customDecksDistribution()) !== 100
+    )
+      errors.push("Deck distribution doesn't add up to 100%");
     if (deckGenerationType() == "Random" && generatedDecksCount() <= 0)
       errors.push("Not enough generated decks (min 1)");
     return errors;
@@ -213,6 +271,41 @@ function ConfigurationPage() {
             </Select>
           </FormControl>
         </Flex>
+
+        <Show when={deckGenerationType() == "Custom"}>
+          <Flex {...INNER_FORM_GROUP_PROPS}>
+            <FormControl disabled={isRunningSimulation()} flex={1}>
+              <FormLabel>╀ / ╂ / ╃ / ╇ / ╋ (%)</FormLabel>
+              <Flex>
+                <Input
+                  {...LEFT_DISTRIBUTION_INPUT_PROPS}
+                  value={customDecksDistribution()["1"]}
+                  onChange={handleChangeCustomDeckDistribution("1")}
+                />
+                <Input
+                  {...MIDDLE_DISTRIBUTION_INPUT_PROPS}
+                  value={customDecksDistribution()["2A"]}
+                  onChange={handleChangeCustomDeckDistribution("2A")}
+                />
+                <Input
+                  {...MIDDLE_DISTRIBUTION_INPUT_PROPS}
+                  value={customDecksDistribution()["2B"]}
+                  onChange={handleChangeCustomDeckDistribution("2B")}
+                />
+                <Input
+                  {...MIDDLE_DISTRIBUTION_INPUT_PROPS}
+                  value={customDecksDistribution()["3"]}
+                  onChange={handleChangeCustomDeckDistribution("3")}
+                />
+                <Input
+                  {...RIGHT_DISTRIBUTION_INPUT_PROPS}
+                  value={customDecksDistribution()["4"]}
+                  onChange={handleChangeCustomDeckDistribution("4")}
+                />
+              </Flex>
+            </FormControl>
+          </Flex>
+        </Show>
 
         <Show when={deckGenerationType() == "Random"}>
           <Flex {...INNER_FORM_GROUP_PROPS}>
