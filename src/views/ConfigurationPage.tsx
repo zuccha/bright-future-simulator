@@ -1,5 +1,4 @@
 import {
-  Box,
   Button,
   Checkbox,
   Flex,
@@ -7,20 +6,37 @@ import {
   FormLabel,
   Heading,
   Input,
-  Switch,
+  Select,
+  SelectContent,
+  SelectIcon,
+  SelectListbox,
+  SelectOption,
+  SelectOptionIndicator,
+  SelectOptionText,
+  SelectPlaceholder,
+  SelectTrigger,
+  SelectValue,
   Text,
-  VStack,
 } from "@hope-ui/solid";
 import { For, Show, createSignal } from "solid-js";
 
 const GAP = 10;
-const FORM_CONTROL_PROPS = { flex: 1, minWidth: 120 };
+const FORM_CONTROL_PROPS = { flex: 1, minWidth: 120 } as const;
+const FORM_GROUP_PROPS = { flex: 1, gap: GAP, wrap: "wrap" } as const;
+const INNER_FORM_GROUP_PROPS = {
+  ...FORM_GROUP_PROPS,
+  borderColor: "$neutral6",
+  borderLeftWidth: 2,
+  paddingLeft: "$4",
+} as const;
 
-const computeNumberOfCircles = (cardsCount: number): number => {
+const computeCirclesCount = (cardsCount: number): number => {
   if (cardsCount <= 0) return 0;
   const x = Math.ceil(Math.sqrt(cardsCount));
   return Math.ceil((x % 2 == 0 ? x + 1 : x) / 2);
 };
+
+type DeckGenerationType = "Custom" | "Random";
 
 function ConfigurationPage() {
   const [errors, setErrors] = createSignal<string[]>([]);
@@ -28,12 +44,15 @@ function ConfigurationPage() {
   const [isRunningSimulation, setIsRunningSimulation] = createSignal(false);
   const [simulationProgress, setSimulationProgress] = createSignal(0);
 
-  const [playersCount, setPlayersCount] = createSignal(1);
-  const [cardsCount, setCardsCount] = createSignal(1);
+  const [playersCount, setPlayersCount] = createSignal(2);
+  const [cardsCount, setCardsCount] = createSignal(25);
   const [useCustomMaxCircles, setUseCustomMaxCircles] = createSignal(false);
-  const [maxCircles, setMaxCircles] = createSignal(
-    computeNumberOfCircles(cardsCount())
+  const [circlesCount, setCirclesCount] = createSignal(
+    computeCirclesCount(cardsCount())
   );
+  const [deckGenerationType, setDeckGenerationType] =
+    createSignal<DeckGenerationType>("Random");
+  const [generatedDecksCount, setGeneratedDecksCount] = createSignal(1);
 
   const handleChangePlayersCount = (e: { target: HTMLInputElement }): void => {
     setPlayersCount(Number.parseInt(e.target.value) || 1);
@@ -43,19 +62,23 @@ function ConfigurationPage() {
     const newCardsCount = Number.parseInt(e.target.value) || 1;
     setCardsCount(newCardsCount);
     if (!useCustomMaxCircles())
-      setMaxCircles(computeNumberOfCircles(newCardsCount));
+      setCirclesCount(computeCirclesCount(newCardsCount));
   };
 
-  const handleChangeNumberOfCircles = (e: {
-    target: HTMLInputElement;
-  }): void => {
-    setMaxCircles(Number.parseInt(e.target.value) || 1);
+  const handleChangeCirclesCount = (e: { target: HTMLInputElement }): void => {
+    setCirclesCount(Number.parseInt(e.target.value) || 1);
   };
 
   const handleChangeUseCustomMaxCircles = (e: { target: Element }): void => {
     const target = e.target as unknown as HTMLInputElement;
     setUseCustomMaxCircles(target.checked);
-    if (!target.checked) setMaxCircles(computeNumberOfCircles(cardsCount()));
+    if (!target.checked) setCirclesCount(computeCirclesCount(cardsCount()));
+  };
+
+  const handleChangeGeneratedDecksCount = (e: {
+    target: HTMLInputElement;
+  }): void => {
+    setGeneratedDecksCount(Number.parseInt(e.target.value) || 1);
   };
 
   const validate = (): string[] => {
@@ -63,8 +86,10 @@ function ConfigurationPage() {
     if (playersCount() <= 0) errors.push("Not enough players (min 1)");
     if (cardsCount() < playersCount())
       errors.push("Not enough cards in deck for all players");
-    if (maxCircles() < computeNumberOfCircles(cardsCount()))
+    if (circlesCount() < computeCirclesCount(cardsCount()))
       errors.push("Not enought circles, not all cards can be played");
+    if (deckGenerationType() == "Random" && generatedDecksCount() <= 0)
+      errors.push("Not enough generated decks (min 1)");
     return errors;
   };
 
@@ -104,36 +129,30 @@ function ConfigurationPage() {
           Configure Simulation
         </Heading>
 
-        <Flex wrap="wrap" flex={1} gap={GAP}>
-          <FormControl
-            {...FORM_CONTROL_PROPS}
-            disabled={isRunningSimulation()}
-            required
-          >
+        <Flex {...FORM_GROUP_PROPS}>
+          <FormControl {...FORM_CONTROL_PROPS} disabled={isRunningSimulation()}>
             <FormLabel>Players</FormLabel>
             <Input
               min={1}
               max={10}
               onInput={handleChangePlayersCount}
               placeholder="Number of players"
+              size="sm"
               type="number"
               value={playersCount()}
             />
           </FormControl>
         </Flex>
 
-        <Flex wrap="wrap" flex={1} gap={GAP}>
-          <FormControl
-            {...FORM_CONTROL_PROPS}
-            disabled={isRunningSimulation()}
-            required
-          >
+        <Flex {...FORM_GROUP_PROPS}>
+          <FormControl {...FORM_CONTROL_PROPS} disabled={isRunningSimulation()}>
             <FormLabel>Deck size</FormLabel>
             <Input
               min={1}
               max={200}
               onInput={handleChangeCardsCount}
               placeholder="Deck size"
+              size="sm"
               type="number"
               value={cardsCount()}
             />
@@ -143,16 +162,16 @@ function ConfigurationPage() {
             {...FORM_CONTROL_PROPS}
             disabled={!useCustomMaxCircles() || isRunningSimulation()}
             readOnly={!useCustomMaxCircles()}
-            required
           >
             <FormLabel>Number of circles</FormLabel>
             <Input
               min={1}
               max={200}
-              onInput={handleChangeNumberOfCircles}
+              onInput={handleChangeCirclesCount}
               placeholder="Number of circles"
+              size="sm"
               type="number"
-              value={maxCircles()}
+              value={circlesCount()}
             />
           </FormControl>
 
@@ -160,10 +179,60 @@ function ConfigurationPage() {
             checked={useCustomMaxCircles()}
             disabled={isRunningSimulation()}
             onChange={handleChangeUseCustomMaxCircles}
+            size="sm"
           >
             Custom number of circles
           </Checkbox>
         </Flex>
+
+        <Flex {...FORM_GROUP_PROPS}>
+          <FormControl {...FORM_CONTROL_PROPS} disabled={isRunningSimulation()}>
+            <FormLabel>Deck generation</FormLabel>
+            <Select
+              value={deckGenerationType()}
+              onChange={setDeckGenerationType}
+              size="sm"
+            >
+              <SelectTrigger>
+                <SelectPlaceholder>Deck generation</SelectPlaceholder>
+                <SelectValue />
+                <SelectIcon />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectListbox>
+                  <For each={["Custom", "Random"]}>
+                    {(item) => (
+                      <SelectOption value={item}>
+                        <SelectOptionText>{item}</SelectOptionText>
+                        <SelectOptionIndicator />
+                      </SelectOption>
+                    )}
+                  </For>
+                </SelectListbox>
+              </SelectContent>
+            </Select>
+          </FormControl>
+        </Flex>
+
+        <Show when={deckGenerationType() == "Random"}>
+          <Flex {...INNER_FORM_GROUP_PROPS}>
+            <FormControl
+              {...FORM_CONTROL_PROPS}
+              disabled={isRunningSimulation()}
+            >
+              <FormLabel>Number of generated decks</FormLabel>
+              <Input
+                min={1}
+                max={200}
+                onInput={handleChangeGeneratedDecksCount}
+                placeholder="Number of generated decks"
+                size="sm"
+                type="number"
+                value={generatedDecksCount()}
+              />
+            </FormControl>
+          </Flex>
+        </Show>
 
         <Button
           disabled={isRunningSimulation()}
@@ -171,6 +240,7 @@ function ConfigurationPage() {
           loadingText={`${Math.ceil(simulationProgress() * 100)}%`}
           marginTop="$4"
           onClick={handleRunSimulation}
+          size="sm"
         >
           Run Simulation
         </Button>
