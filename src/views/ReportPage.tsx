@@ -21,7 +21,7 @@ type ReportPageProps = {
 };
 
 const p = (n: number): number => {
-  return (Math.round(n * 100) / 100) * 100;
+  return f(n * 100);
 };
 
 const f = (n: number): number => {

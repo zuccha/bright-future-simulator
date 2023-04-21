@@ -80,8 +80,8 @@ function ConfigurationPage(props: ConfigurationPageProps) {
     computeBoardSize(cardsCount())
   );
   const [terrainGenerationType, setTerrainGenerationType] =
-    createSignal<TerrainGenerationType>("Custom");
-  const [generatedTerrainCount, setGeneratedTerrainCount] = createSignal(1);
+    createSignal<TerrainGenerationType>("Random");
+  const [generatedTerrainCount, setGeneratedTerrainCount] = createSignal(10);
   const [customTerrainDistribution, setCustomTerrainDistribution] =
     createSignal<TerrainDistribution>(TerrainGenerator.createDistribution());
   const [simulationsCount, setSimulationsCount] = createSignal(1000);
@@ -173,7 +173,24 @@ function ConfigurationPage(props: ConfigurationPageProps) {
         break;
       }
       case "Random": {
-        setErrors(["Random simulation not supported yet"]);
+        for (let i = 0; i < generatedTerrainCount(); ++i) {
+          const updateProgress = (iteration: number) =>
+            setSimulationProgress(
+              Math.floor(
+                ((iteration + i * simulationsCount()) / simulationsCount()) *
+                  generatedTerrainCount()
+              )
+            );
+
+          const simulation = new Simulation(
+            cardsCount(),
+            TerrainGenerator.createRandomDistribution(),
+            boardSize(),
+            playersCount(),
+            simulationsCount()
+          );
+          reports.push(simulation.run(updateProgress));
+        }
         break;
       }
     }

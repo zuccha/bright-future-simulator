@@ -14,6 +14,20 @@ export default class TerrainGenerator {
     };
   }
 
+  static createRandomDistribution(): TerrainDistribution {
+    const random = [Math.random(), Math.random(), Math.random(), Math.random()];
+    random.sort();
+
+    return {
+      [TerrainType.Zero]: 0,
+      [TerrainType.One]: random[0]! * 100,
+      [TerrainType.TwoI]: (random[1]! - random[0]!) * 100,
+      [TerrainType.TwoL]: (random[2]! - random[1]!) * 100,
+      [TerrainType.Three]: (random[3]! - random[2]!) * 100,
+      [TerrainType.Four]: (1 - random[3]!) * 100,
+    };
+  }
+
   static isDistributionValid(distribution: TerrainDistribution): boolean {
     const sum =
       distribution[TerrainType.Zero] +
@@ -33,12 +47,17 @@ export default class TerrainGenerator {
 
     for (let typeStr in distribution) {
       const type = Number(typeStr) as unknown as TerrainType;
-      for (let i = 0; i < (distribution[type] / 100) * quantity; ++i) {
+      for (
+        let i = 0;
+        i < Math.floor((distribution[type] / 100) * quantity);
+        ++i
+      ) {
         terrains.push(Terrain.create(type));
       }
     }
 
-    for (let i = 0; i < quantity - terrains.length; ++i) {
+    const leftover = quantity - terrains.length;
+    for (let i = 0; i < leftover; ++i) {
       terrains.push(Terrain.create(TerrainType.Four));
     }
 
