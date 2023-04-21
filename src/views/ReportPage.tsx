@@ -20,12 +20,16 @@ type ReportPageProps = {
   reports: SimulationReport[];
 };
 
-const p = (n: number): number => {
-  return f(n * 100);
+const p = (n: number): string => {
+  return d(n * 100);
 };
 
-const f = (n: number): number => {
-  return Math.round(n * 100) / 100;
+const d = (n: number): string => {
+  return (Math.round(n * 100) / 100).toFixed(2);
+};
+
+const i = (n: number): string => {
+  return (Math.round(n * 100) / 100).toFixed(0);
 };
 
 function ReportPage(props: ReportPageProps) {
@@ -96,7 +100,7 @@ function ReportPage(props: ReportPageProps) {
                 <>
                   <Show when={showPercentages()}>
                     <Tr>
-                      <Td numeric>{f(report.score)}</Td>
+                      <Td numeric>{d(report.score)}</Td>
                       <Td numeric>
                         {p(report.terrainsCount / report.terrainsCount)}
                       </Td>
@@ -157,30 +161,30 @@ function ReportPage(props: ReportPageProps) {
                   </Show>
                   <Show when={!showPercentages()}>
                     <Tr>
-                      <Td numeric>{f(report.score)}</Td>
-                      <Td numeric>{f(report.terrainsCount)}</Td>
+                      <Td numeric>{d(report.score)}</Td>
+                      <Td numeric>{i(report.terrainsCount)}</Td>
                       <Td numeric>
-                        {f(report.terrainDistribution[TerrainType.One])}
+                        {i(report.terrainDistribution[TerrainType.One])}
                       </Td>
                       <Td numeric>
-                        {f(report.terrainDistribution[TerrainType.TwoI])}
+                        {i(report.terrainDistribution[TerrainType.TwoI])}
                       </Td>
                       <Td numeric>
-                        {f(report.terrainDistribution[TerrainType.TwoL])}
+                        {i(report.terrainDistribution[TerrainType.TwoL])}
                       </Td>
                       <Td numeric>
-                        {f(report.terrainDistribution[TerrainType.Three])}
+                        {i(report.terrainDistribution[TerrainType.Three])}
                       </Td>
                       <Td numeric>
-                        {f(report.terrainDistribution[TerrainType.Four])}
+                        {i(report.terrainDistribution[TerrainType.Four])}
                       </Td>
                       <Td numeric>
-                        {f(report.terrainsCount - report.averageTerrainsLeft)}
+                        {d(report.terrainsCount - report.averageTerrainsLeft)}
                       </Td>
-                      <Td numeric>{f(report.averageTerrainsLeft)}</Td>
-                      <Td numeric>{f(report.boardSize ** 2)}</Td>
-                      <Td numeric>{f(report.averageEmptyLotsOnBoard)}</Td>
-                      <Td numeric>{f(report.averageOccupiedLotsOnBoard)}</Td>
+                      <Td numeric>{d(report.averageTerrainsLeft)}</Td>
+                      <Td numeric>{d(report.boardSize ** 2)}</Td>
+                      <Td numeric>{d(report.averageEmptyLotsOnBoard)}</Td>
+                      <Td numeric>{d(report.averageOccupiedLotsOnBoard)}</Td>
                     </Tr>
                   </Show>
                 </>
