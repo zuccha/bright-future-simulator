@@ -53,7 +53,7 @@ export default class Simulation {
     this.iterationsCount = iterationsCount;
   }
 
-  run(onIteration: (iteration: number) => void): SimulationReport {
+  run(): SimulationReport {
     const reports: GameReport[] = [];
 
     for (let i = 0; i < this.iterationsCount; ++i) {
@@ -64,7 +64,6 @@ export default class Simulation {
       const game = new Game(deck, this.boardSize, this.playersCount);
 
       reports.push(game.simulate());
-      onIteration(i);
     }
 
     const countTerrains = (predicate: (terrain: Terrain) => boolean) =>

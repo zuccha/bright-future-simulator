@@ -38,7 +38,6 @@ const DISTRIBUTION_INPUT_PROPS = {
   flex: 1,
   fontSize: "$sm",
   size: "sm",
-  // type: "number",
 } as const;
 const LEFT_DISTRIBUTION_INPUT_PROPS = {
   ...DISTRIBUTION_INPUT_PROPS,
@@ -56,8 +55,8 @@ const RIGHT_DISTRIBUTION_INPUT_PROPS = {
 };
 
 const computeBoardSize = (cardsCount: number): number => {
-  if (cardsCount <= 0) return 0;
-  const x = Math.ceil(Math.sqrt(cardsCount));
+  if (cardsCount + 1 <= 0) return 0;
+  const x = Math.ceil(Math.sqrt(cardsCount + 1));
   return x % 2 == 0 ? x + 1 : x;
 };
 
@@ -71,10 +70,9 @@ function ConfigurationPage(props: ConfigurationPageProps) {
   const [errors, setErrors] = createSignal<string[]>([]);
 
   const [isRunningSimulation, setIsRunningSimulation] = createSignal(false);
-  const [simulationProgress, setSimulationProgress] = createSignal(0);
 
   const [playersCount, setPlayersCount] = createSignal(2);
-  const [cardsCount, setCardsCount] = createSignal(25);
+  const [cardsCount, setCardsCount] = createSignal(24);
   const [useCustomBoardSize, setUseCustomBoardSize] = createSignal(false);
   const [boardSize, setBoardSize] = createSignal(
     computeBoardSize(cardsCount())
@@ -84,7 +82,7 @@ function ConfigurationPage(props: ConfigurationPageProps) {
   const [generatedTerrainCount, setGeneratedTerrainCount] = createSignal(100);
   const [customTerrainDistribution, setCustomTerrainDistribution] =
     createSignal<TerrainDistribution>(TerrainGenerator.createDistribution());
-  const [simulationsCount, setSimulationsCount] = createSignal(1000);
+  const [iterationsCount, setIterationsCount] = createSignal(1000);
 
   const handleChangePlayersCount = (e: { target: HTMLInputElement }): void => {
     setPlayersCount(Number.parseInt(e.target.value) || 1);
@@ -123,10 +121,10 @@ function ConfigurationPage(props: ConfigurationPageProps) {
       });
     };
 
-  const handleChangeSimulationsCount = (e: {
+  const handleChangeIterationsCount = (e: {
     target: HTMLInputElement;
   }): void => {
-    setSimulationsCount(Number.parseInt(e.target.value) || 1);
+    setIterationsCount(Number.parseInt(e.target.value) || 1);
   };
 
   const validate = (): string[] => {
@@ -155,41 +153,32 @@ function ConfigurationPage(props: ConfigurationPageProps) {
 
     setErrors([]);
     setIsRunningSimulation(true);
+    await new Promise((resolve) => setTimeout(resolve, 10));
 
     const reports: SimulationReport[] = [];
 
     switch (terrainGenerationType()) {
       case "Custom": {
-        const updateProgress = (iteration: number) =>
-          setSimulationProgress(Math.floor(iteration / simulationsCount()));
         const simulation = new Simulation(
           cardsCount(),
           customTerrainDistribution(),
           boardSize(),
           playersCount(),
-          simulationsCount()
+          iterationsCount()
         );
-        reports.push(simulation.run(updateProgress));
+        reports.push(simulation.run());
         break;
       }
       case "Random": {
         for (let i = 0; i < generatedTerrainCount(); ++i) {
-          const updateProgress = (iteration: number) =>
-            setSimulationProgress(
-              Math.floor(
-                ((iteration + i * simulationsCount()) / simulationsCount()) *
-                  generatedTerrainCount()
-              )
-            );
-
           const simulation = new Simulation(
             cardsCount(),
             TerrainGenerator.createRandomDistribution(),
             boardSize(),
             playersCount(),
-            simulationsCount()
+            iterationsCount()
           );
-          reports.push(simulation.run(updateProgress));
+          reports.push(simulation.run());
         }
         break;
       }
@@ -379,15 +368,15 @@ function ConfigurationPage(props: ConfigurationPageProps) {
               {...FORM_CONTROL_PROPS}
               disabled={isRunningSimulation()}
             >
-              <FormLabel>Number of simulations</FormLabel>
+              <FormLabel>Number of iterations</FormLabel>
               <Input
                 min={1}
                 max={10000}
-                onInput={handleChangeSimulationsCount}
-                placeholder="Number of simulations"
+                onInput={handleChangeIterationsCount}
+                placeholder="Number of iterations"
                 size="sm"
                 type="number"
-                value={simulationsCount()}
+                value={iterationsCount()}
               />
             </FormControl>
           </Flex>
@@ -395,7 +384,6 @@ function ConfigurationPage(props: ConfigurationPageProps) {
           <Button
             disabled={isRunningSimulation()}
             loading={isRunningSimulation()}
-            loadingText={`${Math.ceil(simulationProgress() * 100)}%`}
             marginTop="$4"
             onClick={handleRunSimulation}
             size="sm"
