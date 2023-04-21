@@ -1,6 +1,14 @@
 import Deck from "./Deck";
 import Game, { GameReport } from "./Game";
-import Terrain from "./Terrain";
+import Terrain, {
+  TerrainFour,
+  TerrainOne,
+  TerrainThree,
+  TerrainTwoI,
+  TerrainTwoL,
+  TerrainType,
+  TerrainZero,
+} from "./Terrain";
 import TerrainGenerator, { TerrainDistribution } from "./TerrainGenerator";
 
 const average = (values: number[]) =>
@@ -14,6 +22,7 @@ export type SimulationReport = {
   averageEmptyLotsOnBoard: number;
   boardSize: number;
   reports: GameReport[];
+  score: number;
   terrainDistribution: TerrainDistribution;
   terrainsCount: number;
 };
@@ -58,25 +67,45 @@ export default class Simulation {
       onIteration(i);
     }
 
+    const countTerrains = (predicate: (terrain: Terrain) => boolean) =>
+      this.terrains.reduce(
+        (count, terrain) => (predicate(terrain) ? count + 1 : count),
+        0
+      );
+
+    const averageTerrainsLeftInDeck = average(
+      reports.map((report) => report.totalTerrainsLeftInDeck)
+    );
+    const averageTerrainsLeftInPlayerHands = average(
+      reports.map((report) => report.totalTerrainsLeftInPlayerHands)
+    );
+    const averageTerrainsLeft = average(
+      reports.map((report) => report.totalTerrainsLeft)
+    );
+    const averageOccupiedLotsOnBoard = average(
+      reports.map((report) => report.totalOccupiedLotsOnBoard)
+    );
+    const averageEmptyLotsOnBoard = average(
+      reports.map((report) => report.totalEmptyLotsOnBoard)
+    );
+
     return {
-      averageTerrainsLeftInDeck: average(
-        reports.map((report) => report.totalTerrainsLeftInDeck)
-      ),
-      averageTerrainsLeftInPlayerHands: average(
-        reports.map((report) => report.totalTerrainsLeftInPlayerHands)
-      ),
-      averageTerrainsLeft: average(
-        reports.map((report) => report.totalTerrainsLeft)
-      ),
-      averageOccupiedLotsOnBoard: average(
-        reports.map((report) => report.totalOccupiedLotsOnBoard)
-      ),
-      averageEmptyLotsOnBoard: average(
-        reports.map((report) => report.totalEmptyLotsOnBoard)
-      ),
+      averageTerrainsLeftInDeck,
+      averageTerrainsLeftInPlayerHands,
+      averageTerrainsLeft,
+      averageOccupiedLotsOnBoard,
+      averageEmptyLotsOnBoard,
       boardSize: this.boardSize,
       reports,
-      terrainDistribution: this.terrainDistribution,
+      score: (this.terrainsCount - averageTerrainsLeft) / this.terrainsCount,
+      terrainDistribution: {
+        [TerrainType.Zero]: countTerrains((t) => t instanceof TerrainZero),
+        [TerrainType.One]: countTerrains((t) => t instanceof TerrainOne),
+        [TerrainType.TwoI]: countTerrains((t) => t instanceof TerrainTwoI),
+        [TerrainType.TwoL]: countTerrains((t) => t instanceof TerrainTwoL),
+        [TerrainType.Three]: countTerrains((t) => t instanceof TerrainThree),
+        [TerrainType.Four]: countTerrains((t) => t instanceof TerrainFour),
+      },
       terrainsCount: this.terrainsCount,
     };
   }

@@ -20,6 +20,10 @@ type ReportPageProps = {
   reports: SimulationReport[];
 };
 
+const p = (n: number): number => {
+  return (Math.round(n * 100) / 100) * 100;
+};
+
 const f = (n: number): number => {
   return Math.round(n * 100) / 100;
 };
@@ -65,85 +69,109 @@ function ReportPage(props: ReportPageProps) {
         <Thead>
           <Tr>
             <Th numeric>Score</Th>
-            <Th numeric>╀ (%)</Th>
-            <Th numeric>╂ (%)</Th>
-            <Th numeric>╄ (%)</Th>
-            <Th numeric>╇ (%)</Th>
-            <Th numeric>╋ (%)</Th>
+            <Th numeric>Total cards</Th>
+            <Th numeric>╀</Th>
+            <Th numeric>╂</Th>
+            <Th numeric>╄</Th>
+            <Th numeric>╇</Th>
+            <Th numeric>╋</Th>
             <Th numeric>Cards used</Th>
             <Th numeric>Cards not used</Th>
-            <Th numeric>Empty lots</Th>
-            <Th numeric>Occupied lots</Th>
+            <Th numeric>Total cells</Th>
+            <Th numeric>Empty cells</Th>
+            <Th numeric>Occupied cells</Th>
           </Tr>
         </Thead>
         <Tbody>
           <For each={props.reports}>
             {(report) => {
-              const score =
-                (report.terrainsCount - report.averageTerrainsLeft) /
-                report.terrainsCount;
-
               return (
                 <>
                   <Show when={showPercentages()}>
                     <Tr>
-                      <Td numeric>{f(score)}</Td>
+                      <Td numeric>{f(report.score)}</Td>
                       <Td numeric>
-                        {report.terrainDistribution[TerrainType.One]}
+                        {p(report.terrainsCount / report.terrainsCount)}
                       </Td>
                       <Td numeric>
-                        {report.terrainDistribution[TerrainType.TwoI]}
+                        {p(
+                          report.terrainDistribution[TerrainType.One] /
+                            report.terrainsCount
+                        )}
                       </Td>
                       <Td numeric>
-                        {report.terrainDistribution[TerrainType.TwoL]}
+                        {p(
+                          report.terrainDistribution[TerrainType.TwoI] /
+                            report.terrainsCount
+                        )}
                       </Td>
                       <Td numeric>
-                        {report.terrainDistribution[TerrainType.Three]}
+                        {p(
+                          report.terrainDistribution[TerrainType.TwoL] /
+                            report.terrainsCount
+                        )}
                       </Td>
                       <Td numeric>
-                        {report.terrainDistribution[TerrainType.Four]}
+                        {p(
+                          report.terrainDistribution[TerrainType.Three] /
+                            report.terrainsCount
+                        )}
                       </Td>
                       <Td numeric>
-                        {f(
+                        {p(
+                          report.terrainDistribution[TerrainType.Four] /
+                            report.terrainsCount
+                        )}
+                      </Td>
+                      <Td numeric>
+                        {p(
                           (report.terrainsCount - report.averageTerrainsLeft) /
                             report.terrainsCount
                         )}
                       </Td>
                       <Td numeric>
-                        {f(report.averageTerrainsLeft / report.terrainsCount)}
+                        {p(report.averageTerrainsLeft / report.terrainsCount)}
                       </Td>
                       <Td numeric>
-                        {f(report.averageEmptyLotsOnBoard / report.boardSize)}
+                        {p(report.boardSize ** 2 / report.boardSize ** 2)}
                       </Td>
                       <Td numeric>
-                        {f(
-                          report.averageOccupiedLotsOnBoard / report.boardSize
+                        {p(
+                          report.averageEmptyLotsOnBoard / report.boardSize ** 2
+                        )}
+                      </Td>
+                      <Td numeric>
+                        {p(
+                          report.averageOccupiedLotsOnBoard /
+                            report.boardSize ** 2
                         )}
                       </Td>
                     </Tr>
                   </Show>
                   <Show when={!showPercentages()}>
                     <Tr>
-                      <Td numeric>{f(score)}</Td>
+                      <Td numeric>{f(report.score)}</Td>
+                      <Td numeric>{f(report.terrainsCount)}</Td>
                       <Td numeric>
-                        {report.terrainDistribution[TerrainType.One]}
+                        {f(report.terrainDistribution[TerrainType.One])}
                       </Td>
                       <Td numeric>
-                        {report.terrainDistribution[TerrainType.TwoI]}
+                        {f(report.terrainDistribution[TerrainType.TwoI])}
                       </Td>
                       <Td numeric>
-                        {report.terrainDistribution[TerrainType.TwoL]}
+                        {f(report.terrainDistribution[TerrainType.TwoL])}
                       </Td>
                       <Td numeric>
-                        {report.terrainDistribution[TerrainType.Three]}
+                        {f(report.terrainDistribution[TerrainType.Three])}
                       </Td>
                       <Td numeric>
-                        {report.terrainDistribution[TerrainType.Four]}
+                        {f(report.terrainDistribution[TerrainType.Four])}
                       </Td>
                       <Td numeric>
                         {f(report.terrainsCount - report.averageTerrainsLeft)}
                       </Td>
                       <Td numeric>{f(report.averageTerrainsLeft)}</Td>
+                      <Td numeric>{f(report.boardSize ** 2)}</Td>
                       <Td numeric>{f(report.averageEmptyLotsOnBoard)}</Td>
                       <Td numeric>{f(report.averageOccupiedLotsOnBoard)}</Td>
                     </Tr>
