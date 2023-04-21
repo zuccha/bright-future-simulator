@@ -1,8 +1,16 @@
-import { L } from "@tauri-apps/api/event-2a9960e7";
 import Board from "./Board";
 import Deck from "./Deck";
 import Player from "./Player";
 import Terrain from "./Terrain";
+
+export type GameReport = {
+  totalTerrainsLeftInDeck: number;
+  totalTerrainsLeftInPlayerHands: number;
+  totalTerrainsLeft: number;
+  totalOccupiedLotsOnBoard: number;
+  totalEmptyLotsOnBoard: number;
+  boardState: string;
+};
 
 export default class Game {
   private board: Board = new Board(1);
@@ -17,7 +25,7 @@ export default class Game {
     for (let i = 0; i < playersCount; ++i) this.players.push(new Player());
   }
 
-  simulate(): void {
+  simulate(): GameReport {
     // Add one initial card to all players.
     for (let player of this.players) player.add(this.deck.draw(1));
 
@@ -37,10 +45,28 @@ export default class Game {
       // on the board, or if they don't have cards in hand.
       for (let i = 0; i < this.roundsCount; ++i) {
         for (let player of this.players) {
-          if (!player.play(this.board)) return;
+          if (!player.play(this.board)) return this.report();
         }
       }
     }
+  }
+
+  report(): GameReport {
+    const totalTerrainsLeftInDeck = this.deck.size();
+    const totalTerrainsLeftInPlayerHands = this.players
+      .map((player) => player.size())
+      .reduce((sizeSum, size) => sizeSum + size, 0);
+    const totalTerrainsLeft =
+      totalTerrainsLeftInDeck + totalTerrainsLeftInPlayerHands;
+
+    return {
+      totalTerrainsLeftInDeck,
+      totalTerrainsLeftInPlayerHands,
+      totalTerrainsLeft,
+      totalEmptyLotsOnBoard: this.board.emptyLotsCount(),
+      totalOccupiedLotsOnBoard: this.board.occupiedLotsCount(),
+      boardState: this.board.toString(),
+    };
   }
 
   toString(): string {

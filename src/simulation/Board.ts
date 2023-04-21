@@ -60,6 +60,28 @@ export default class Board {
     return false;
   }
 
+  emptyLotsCount(): number {
+    let count = 0;
+    for (let i = 0; i < this.grid.length; ++i) {
+      for (let j = 0; j < this.grid[i]!.length; ++j) {
+        const lot = this.grid[i]![j]!;
+        if (!lot.terrain) count++;
+      }
+    }
+    return count;
+  }
+
+  occupiedLotsCount(): number {
+    let count = 0;
+    for (let i = 0; i < this.grid.length; ++i) {
+      for (let j = 0; j < this.grid[i]!.length; ++j) {
+        const lot = this.grid[i]![j]!;
+        if (lot.terrain) count++;
+      }
+    }
+    return count;
+  }
+
   toString(): string {
     let str: string = "";
     for (let i = 0; i < this.grid.length; ++i) {

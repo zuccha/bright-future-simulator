@@ -23,7 +23,7 @@ import TerrainGenerator, {
   TerrainDistribution,
 } from "../simulation/TerrainGenerator";
 import { TerrainType } from "../simulation/Terrain";
-import Simulation from "../simulation/Simulation";
+import Simulation, { SimulationReport } from "../simulation/Simulation";
 
 const GAP = 10;
 const FORM_CONTROL_PROPS = { flex: 1, minWidth: 120 } as const;
@@ -61,9 +61,13 @@ const computeBoardSize = (cardsCount: number): number => {
   return x % 2 == 0 ? x + 1 : x;
 };
 
-type DeckGenerationType = "Custom" | "Random";
+type TerrainGenerationType = "Custom" | "Random";
 
-function ConfigurationPage() {
+type ConfigurationPageProps = {
+  onFinishSimulation: (reports: SimulationReport[]) => void;
+};
+
+function ConfigurationPage(props: ConfigurationPageProps) {
   const [errors, setErrors] = createSignal<string[]>([]);
 
   const [isRunningSimulation, setIsRunningSimulation] = createSignal(false);
@@ -76,10 +80,11 @@ function ConfigurationPage() {
     computeBoardSize(cardsCount())
   );
   const [terrainGenerationType, setTerrainGenerationType] =
-    createSignal<DeckGenerationType>("Custom");
+    createSignal<TerrainGenerationType>("Custom");
   const [generatedTerrainCount, setGeneratedTerrainCount] = createSignal(1);
   const [customTerrainDistribution, setCustomTerrainDistribution] =
     createSignal<TerrainDistribution>(TerrainGenerator.createDistribution());
+  const [simulationsCount, setSimulationsCount] = createSignal(1000);
 
   const handleChangePlayersCount = (e: { target: HTMLInputElement }): void => {
     setPlayersCount(Number.parseInt(e.target.value) || 1);
@@ -91,7 +96,7 @@ function ConfigurationPage() {
     if (!useCustomBoardSize()) setBoardSize(computeBoardSize(newCardsCount));
   };
 
-  const handleChangeCirclesCount = (e: { target: HTMLInputElement }): void => {
+  const handleChangeBoardSize = (e: { target: HTMLInputElement }): void => {
     setBoardSize(Number.parseInt(e.target.value) || 1);
   };
 
@@ -117,6 +122,12 @@ function ConfigurationPage() {
           : Number(e.target.value),
       });
     };
+
+  const handleChangeSimulationsCount = (e: {
+    target: HTMLInputElement;
+  }): void => {
+    setSimulationsCount(Number.parseInt(e.target.value) || 1);
+  };
 
   const validate = (): string[] => {
     const errors: string[] = [];
@@ -145,16 +156,31 @@ function ConfigurationPage() {
     setErrors([]);
     setIsRunningSimulation(true);
 
-    console.time("simulation");
-    const terrains = TerrainGenerator.generate(
-      cardsCount(),
-      customTerrainDistribution()
-    );
-    const simulation = new Simulation(terrains, boardSize(), playersCount(), 1);
-    console.log(simulation.run());
-    console.timeEnd("simulation");
+    const reports: SimulationReport[] = [];
+
+    switch (terrainGenerationType()) {
+      case "Custom": {
+        const updateProgress = (iteration: number) =>
+          setSimulationProgress(Math.floor(iteration / simulationsCount()));
+        const simulation = new Simulation(
+          cardsCount(),
+          customTerrainDistribution(),
+          boardSize(),
+          playersCount(),
+          simulationsCount()
+        );
+        reports.push(simulation.run(updateProgress));
+        break;
+      }
+      case "Random": {
+        setErrors(["Random simulation not supported yet"]);
+        break;
+      }
+    }
 
     setIsRunningSimulation(false);
+
+    props.onFinishSimulation(reports);
   };
 
   return (
@@ -216,7 +242,7 @@ function ConfigurationPage() {
               <Input
                 min={1}
                 max={200}
-                onInput={handleChangeCirclesCount}
+                onInput={handleChangeBoardSize}
                 placeholder="Board size"
                 size="sm"
                 type="number"
@@ -330,6 +356,24 @@ function ConfigurationPage() {
               </FormControl>
             </Flex>
           </Show>
+
+          <Flex {...FORM_GROUP_PROPS}>
+            <FormControl
+              {...FORM_CONTROL_PROPS}
+              disabled={isRunningSimulation()}
+            >
+              <FormLabel>Number of simulations</FormLabel>
+              <Input
+                min={1}
+                max={10000}
+                onInput={handleChangeSimulationsCount}
+                placeholder="Number of simulations"
+                size="sm"
+                type="number"
+                value={simulationsCount()}
+              />
+            </FormControl>
+          </Flex>
 
           <Button
             disabled={isRunningSimulation()}
