@@ -39,11 +39,12 @@ _Playing a card_ means iterating over one player's hand. For each card, the play
 The report view features a few actions, and the report table. In the table, each row is represents a different simulation consisting of a different distribution of terrain cards. Rows are sorted by _score_.
 
 ### Actions:
-- **Configure:** Go back to the configuration view. **N.B.: The current report will be lost!**
+
 - **Show percentages:** If active, the table will display the values in percentages, otherwise it will show the actual values used during the simulation.
 - **Export CSV:** Not implemented yet.
 
 ### Columns:
+
 - **Score:** The proportion of terrain cards placed on the board over the total number of terrain cards. 1 mean all cards have been used, 0 means none.
 - **Total cards:** Total number of cards in the original deck (not including the initial card placed at the center of the board).
 - **╀:** Number of cards with one connection.
