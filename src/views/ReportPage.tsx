@@ -3,6 +3,7 @@ import {
   Checkbox,
   Divider,
   Flex,
+  Heading,
   Table,
   TableCaption,
   Tbody,
@@ -12,11 +13,10 @@ import {
   Tr,
 } from "@hope-ui/solid";
 import { SimulationReport } from "../simulation/Simulation";
-import { For, Show, createSignal } from "solid-js";
+import { For, Show, createMemo, createSignal } from "solid-js";
 import { TerrainType } from "../simulation/Terrain";
 
 type ReportPageProps = {
-  onConfigure: () => void;
   reports: SimulationReport[];
 };
 
@@ -40,29 +40,22 @@ function ReportPage(props: ReportPageProps) {
     setShowPercentages(target.checked);
   };
 
-  const sortedReports = [...props.reports];
-  sortedReports.sort((r1, r2) => {
-    if (r1.score > r2.score) return -1;
-    if (r1.score < r2.score) return 1;
-    return 0;
-  });
+  const sortedReports = () => {
+    return [...props.reports].sort((r1, r2) => {
+      if (r1.score > r2.score) return -1;
+      if (r1.score < r2.score) return 1;
+      return 0;
+    });
+  };
 
   return (
-    <Flex
-      alignItems="center"
-      direction="column"
-      gap={30}
-      height="100%"
-      padding="$10"
-    >
+    <Flex direction="column" gap={10} height="100%" padding="$10">
+      <Heading size="lg" marginBottom="$2">
+        Simulation Report
+      </Heading>
+
       <Flex width="100%" justifyContent="space-between">
         <Flex gap={20}>
-          <Button size="sm" onClick={props.onConfigure}>
-            Configure
-          </Button>
-
-          <Divider orientation="vertical" />
-
           <Checkbox
             checked={showPercentages()}
             onChange={handleChangeShowPercentages}
@@ -94,7 +87,7 @@ function ReportPage(props: ReportPageProps) {
           </Tr>
         </Thead>
         <Tbody>
-          <For each={sortedReports}>
+          <For each={sortedReports()}>
             {(report) => {
               return (
                 <>

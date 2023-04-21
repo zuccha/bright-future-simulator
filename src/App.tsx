@@ -2,6 +2,7 @@ import { Show, createSignal } from "solid-js";
 import ConfigurationPage from "./views/ConfigurationPage";
 import ReportPage from "./views/ReportPage";
 import { SimulationReport } from "./simulation/Simulation";
+import { Divider, Flex } from "@hope-ui/solid";
 
 enum Page {
   Configuration,
@@ -14,22 +15,13 @@ function App() {
 
   const handleSimulationFinished = (newReports: SimulationReport[]): void => {
     setReports(newReports);
-    setPage(Page.Report);
-  };
-
-  const handleConfigure = (): void => {
-    setPage(Page.Configuration);
   };
 
   return (
-    <>
-      <Show when={page() === Page.Configuration}>
-        <ConfigurationPage onFinishSimulation={handleSimulationFinished} />
-      </Show>
-      <Show when={page() === Page.Report}>
-        <ReportPage onConfigure={handleConfigure} reports={reports()} />
-      </Show>
-    </>
+    <Flex>
+      <ConfigurationPage onFinishSimulation={handleSimulationFinished} />
+      <ReportPage reports={reports()} />
+    </Flex>
   );
 }
 

@@ -190,219 +190,200 @@ function ConfigurationPage(props: ConfigurationPageProps) {
   };
 
   return (
-    <Flex
-      height="100%"
-      alignItems="center"
-      justifyContent="center"
-      padding="$10"
-    >
-      <Flex gap={GAP * 3}>
-        <Flex maxWidth={300} width="100%" gap={GAP} direction="column">
-          <Heading size="lg" marginBottom="$2">
-            Configure Simulation
-          </Heading>
+    <Flex height="100%" padding="$10">
+      <Flex maxWidth={300} width="100%" gap={GAP} direction="column">
+        <Heading size="lg" marginBottom="$2">
+          Configure Simulation
+        </Heading>
 
-          <Flex {...FORM_GROUP_PROPS}>
-            <FormControl
-              {...FORM_CONTROL_PROPS}
-              disabled={isRunningSimulation()}
-            >
-              <FormLabel>Players</FormLabel>
-              <Input
-                min={1}
-                max={10}
-                onInput={handleChangePlayersCount}
-                placeholder="Number of players"
-                size="sm"
-                type="number"
-                value={playersCount()}
-              />
-            </FormControl>
-          </Flex>
-
-          <Flex {...FORM_GROUP_PROPS}>
-            <FormControl
-              {...FORM_CONTROL_PROPS}
-              disabled={isRunningSimulation()}
-            >
-              <FormLabel>Deck size</FormLabel>
-              <Input
-                min={1}
-                max={200}
-                onInput={handleChangeCardsCount}
-                placeholder="Deck size"
-                size="sm"
-                type="number"
-                value={cardsCount()}
-              />
-            </FormControl>
-
-            <FormControl
-              {...FORM_CONTROL_PROPS}
-              disabled={!useCustomBoardSize() || isRunningSimulation()}
-              readOnly={!useCustomBoardSize()}
-            >
-              <FormLabel>
-                Board size ({boardSize()}x{boardSize()})
-              </FormLabel>
-              <Input
-                min={1}
-                max={200}
-                onInput={handleChangeBoardSize}
-                placeholder="Board size"
-                size="sm"
-                type="number"
-                value={boardSize()}
-              />
-            </FormControl>
-
-            <Checkbox
-              checked={useCustomBoardSize()}
-              disabled={isRunningSimulation()}
-              onChange={handleChangeUseCustomMaxCircles}
+        <Flex {...FORM_GROUP_PROPS}>
+          <FormControl {...FORM_CONTROL_PROPS} disabled={isRunningSimulation()}>
+            <FormLabel>Players</FormLabel>
+            <Input
+              min={1}
+              max={10}
+              onInput={handleChangePlayersCount}
+              placeholder="Number of players"
               size="sm"
-            >
-              Custom board size
-            </Checkbox>
-          </Flex>
+              type="number"
+              value={playersCount()}
+            />
+          </FormControl>
+        </Flex>
 
-          <Flex {...FORM_GROUP_PROPS}>
-            <FormControl
-              {...FORM_CONTROL_PROPS}
-              disabled={isRunningSimulation()}
-            >
-              <FormLabel>Deck generation</FormLabel>
-              <Select
-                value={terrainGenerationType()}
-                onChange={setTerrainGenerationType}
-                size="sm"
-              >
-                <SelectTrigger>
-                  <SelectPlaceholder>Deck generation</SelectPlaceholder>
-                  <SelectValue />
-                  <SelectIcon />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectListbox>
-                    <For each={["Custom", "Random"]}>
-                      {(item) => (
-                        <SelectOption value={item}>
-                          <SelectOptionText>{item}</SelectOptionText>
-                          <SelectOptionIndicator />
-                        </SelectOption>
-                      )}
-                    </For>
-                  </SelectListbox>
-                </SelectContent>
-              </Select>
-            </FormControl>
-          </Flex>
+        <Flex {...FORM_GROUP_PROPS}>
+          <FormControl {...FORM_CONTROL_PROPS} disabled={isRunningSimulation()}>
+            <FormLabel>Deck size</FormLabel>
+            <Input
+              min={1}
+              max={200}
+              onInput={handleChangeCardsCount}
+              placeholder="Deck size"
+              size="sm"
+              type="number"
+              value={cardsCount()}
+            />
+          </FormControl>
 
-          <Show when={terrainGenerationType() == "Custom"}>
-            <Flex {...INNER_FORM_GROUP_PROPS}>
-              <FormControl disabled={isRunningSimulation()} flex={1}>
-                <FormLabel>╀ / ╂ / ╄ / ╇ / ╋ (%)</FormLabel>
-                <Flex>
-                  <Input
-                    {...LEFT_DISTRIBUTION_INPUT_PROPS}
-                    value={customTerrainDistribution()[TerrainType.One]}
-                    onChange={handleChangeCustomTerrainDistribution(
-                      TerrainType.One
-                    )}
-                  />
-                  <Input
-                    {...MIDDLE_DISTRIBUTION_INPUT_PROPS}
-                    value={customTerrainDistribution()[TerrainType.TwoI]}
-                    onChange={handleChangeCustomTerrainDistribution(
-                      TerrainType.TwoI
-                    )}
-                  />
-                  <Input
-                    {...MIDDLE_DISTRIBUTION_INPUT_PROPS}
-                    value={customTerrainDistribution()[TerrainType.TwoL]}
-                    onChange={handleChangeCustomTerrainDistribution(
-                      TerrainType.TwoL
-                    )}
-                  />
-                  <Input
-                    {...MIDDLE_DISTRIBUTION_INPUT_PROPS}
-                    value={customTerrainDistribution()[TerrainType.Three]}
-                    onChange={handleChangeCustomTerrainDistribution(
-                      TerrainType.Three
-                    )}
-                  />
-                  <Input
-                    {...RIGHT_DISTRIBUTION_INPUT_PROPS}
-                    value={customTerrainDistribution()[TerrainType.Four]}
-                    onChange={handleChangeCustomTerrainDistribution(
-                      TerrainType.Four
-                    )}
-                  />
-                </Flex>
-              </FormControl>
-            </Flex>
-          </Show>
+          <FormControl
+            {...FORM_CONTROL_PROPS}
+            disabled={!useCustomBoardSize() || isRunningSimulation()}
+            readOnly={!useCustomBoardSize()}
+          >
+            <FormLabel>
+              Board size ({boardSize()}x{boardSize()})
+            </FormLabel>
+            <Input
+              min={1}
+              max={200}
+              onInput={handleChangeBoardSize}
+              placeholder="Board size"
+              size="sm"
+              type="number"
+              value={boardSize()}
+            />
+          </FormControl>
 
-          <Show when={terrainGenerationType() == "Random"}>
-            <Flex {...INNER_FORM_GROUP_PROPS}>
-              <FormControl
-                {...FORM_CONTROL_PROPS}
-                disabled={isRunningSimulation()}
-              >
-                <FormLabel>Number of generated decks</FormLabel>
-                <Input
-                  min={1}
-                  max={200}
-                  onInput={handleChangeGeneratedDecksCount}
-                  placeholder="Number of generated decks"
-                  size="sm"
-                  type="number"
-                  value={generatedTerrainCount()}
-                />
-              </FormControl>
-            </Flex>
-          </Show>
-
-          <Flex {...FORM_GROUP_PROPS}>
-            <FormControl
-              {...FORM_CONTROL_PROPS}
-              disabled={isRunningSimulation()}
-            >
-              <FormLabel>Number of iterations</FormLabel>
-              <Input
-                min={1}
-                max={10000}
-                onInput={handleChangeIterationsCount}
-                placeholder="Number of iterations"
-                size="sm"
-                type="number"
-                value={iterationsCount()}
-              />
-            </FormControl>
-          </Flex>
-
-          <Button
+          <Checkbox
+            checked={useCustomBoardSize()}
             disabled={isRunningSimulation()}
-            loading={isRunningSimulation()}
-            marginTop="$4"
-            onClick={handleRunSimulation}
+            onChange={handleChangeUseCustomMaxCircles}
             size="sm"
           >
-            Run Simulation
-          </Button>
-
-          <Show when={errors().length > 0}>
-            <Flex direction="column">
-              <For each={errors()}>
-                {(error) => (
-                  <Text fontSize="$sm" color="red">
-                    {error}
-                  </Text>
-                )}
-              </For>
-            </Flex>
-          </Show>
+            Custom board size
+          </Checkbox>
         </Flex>
+
+        <Flex {...FORM_GROUP_PROPS}>
+          <FormControl {...FORM_CONTROL_PROPS} disabled={isRunningSimulation()}>
+            <FormLabel>Deck generation</FormLabel>
+            <Select
+              value={terrainGenerationType()}
+              onChange={setTerrainGenerationType}
+              size="sm"
+            >
+              <SelectTrigger>
+                <SelectPlaceholder>Deck generation</SelectPlaceholder>
+                <SelectValue />
+                <SelectIcon />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectListbox>
+                  <For each={["Custom", "Random"]}>
+                    {(item) => (
+                      <SelectOption value={item}>
+                        <SelectOptionText>{item}</SelectOptionText>
+                        <SelectOptionIndicator />
+                      </SelectOption>
+                    )}
+                  </For>
+                </SelectListbox>
+              </SelectContent>
+            </Select>
+          </FormControl>
+        </Flex>
+
+        <Show when={terrainGenerationType() == "Custom"}>
+          <Flex {...INNER_FORM_GROUP_PROPS}>
+            <FormControl disabled={isRunningSimulation()} flex={1}>
+              <FormLabel>╀ / ╂ / ╄ / ╇ / ╋ (%)</FormLabel>
+              <Flex>
+                <Input
+                  {...LEFT_DISTRIBUTION_INPUT_PROPS}
+                  value={customTerrainDistribution()[TerrainType.One]}
+                  onChange={handleChangeCustomTerrainDistribution(
+                    TerrainType.One
+                  )}
+                />
+                <Input
+                  {...MIDDLE_DISTRIBUTION_INPUT_PROPS}
+                  value={customTerrainDistribution()[TerrainType.TwoI]}
+                  onChange={handleChangeCustomTerrainDistribution(
+                    TerrainType.TwoI
+                  )}
+                />
+                <Input
+                  {...MIDDLE_DISTRIBUTION_INPUT_PROPS}
+                  value={customTerrainDistribution()[TerrainType.TwoL]}
+                  onChange={handleChangeCustomTerrainDistribution(
+                    TerrainType.TwoL
+                  )}
+                />
+                <Input
+                  {...MIDDLE_DISTRIBUTION_INPUT_PROPS}
+                  value={customTerrainDistribution()[TerrainType.Three]}
+                  onChange={handleChangeCustomTerrainDistribution(
+                    TerrainType.Three
+                  )}
+                />
+                <Input
+                  {...RIGHT_DISTRIBUTION_INPUT_PROPS}
+                  value={customTerrainDistribution()[TerrainType.Four]}
+                  onChange={handleChangeCustomTerrainDistribution(
+                    TerrainType.Four
+                  )}
+                />
+              </Flex>
+            </FormControl>
+          </Flex>
+        </Show>
+
+        <Show when={terrainGenerationType() == "Random"}>
+          <Flex {...INNER_FORM_GROUP_PROPS}>
+            <FormControl
+              {...FORM_CONTROL_PROPS}
+              disabled={isRunningSimulation()}
+            >
+              <FormLabel>Number of generated decks</FormLabel>
+              <Input
+                min={1}
+                max={200}
+                onInput={handleChangeGeneratedDecksCount}
+                placeholder="Number of generated decks"
+                size="sm"
+                type="number"
+                value={generatedTerrainCount()}
+              />
+            </FormControl>
+          </Flex>
+        </Show>
+
+        <Flex {...FORM_GROUP_PROPS}>
+          <FormControl {...FORM_CONTROL_PROPS} disabled={isRunningSimulation()}>
+            <FormLabel>Number of iterations</FormLabel>
+            <Input
+              min={1}
+              max={10000}
+              onInput={handleChangeIterationsCount}
+              placeholder="Number of iterations"
+              size="sm"
+              type="number"
+              value={iterationsCount()}
+            />
+          </FormControl>
+        </Flex>
+
+        <Button
+          disabled={isRunningSimulation()}
+          loading={isRunningSimulation()}
+          marginTop="$4"
+          onClick={handleRunSimulation}
+          size="sm"
+        >
+          Run Simulation
+        </Button>
+
+        <Show when={errors().length > 0}>
+          <Flex direction="column">
+            <For each={errors()}>
+              {(error) => (
+                <Text fontSize="$sm" color="red">
+                  {error}
+                </Text>
+              )}
+            </For>
+          </Flex>
+        </Show>
       </Flex>
     </Flex>
   );
