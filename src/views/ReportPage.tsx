@@ -29,12 +29,19 @@ const f = (n: number): number => {
 };
 
 function ReportPage(props: ReportPageProps) {
-  const [showPercentages, setShowPercentages] = createSignal(false);
+  const [showPercentages, setShowPercentages] = createSignal(true);
 
   const handleChangeShowPercentages = (e: { target: Element }): void => {
     const target = e.target as unknown as HTMLInputElement;
     setShowPercentages(target.checked);
   };
+
+  const sortedReports = [...props.reports];
+  sortedReports.sort((r1, r2) => {
+    if (r1.score > r2.score) return -1;
+    if (r1.score < r2.score) return 1;
+    return 0;
+  });
 
   return (
     <Flex
@@ -83,7 +90,7 @@ function ReportPage(props: ReportPageProps) {
           </Tr>
         </Thead>
         <Tbody>
-          <For each={props.reports}>
+          <For each={sortedReports}>
             {(report) => {
               return (
                 <>

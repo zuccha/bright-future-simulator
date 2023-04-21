@@ -81,7 +81,7 @@ function ConfigurationPage(props: ConfigurationPageProps) {
   );
   const [terrainGenerationType, setTerrainGenerationType] =
     createSignal<TerrainGenerationType>("Random");
-  const [generatedTerrainCount, setGeneratedTerrainCount] = createSignal(10);
+  const [generatedTerrainCount, setGeneratedTerrainCount] = createSignal(100);
   const [customTerrainDistribution, setCustomTerrainDistribution] =
     createSignal<TerrainDistribution>(TerrainGenerator.createDistribution());
   const [simulationsCount, setSimulationsCount] = createSignal(1000);
