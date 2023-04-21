@@ -7,8 +7,8 @@
     "withGlobalTauri": false
   },
   "package": {
-    "productName": "bright-future",
-    "version": "0.0.0"
+    "productName": "Bright Future Simulator",
+    "version": "0.1.0"
   },
   "tauri": {
     "allowlist": {
