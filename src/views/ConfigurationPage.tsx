@@ -19,6 +19,11 @@ import {
   Text,
 } from "@hope-ui/solid";
 import { For, Show, createSignal } from "solid-js";
+import TerrainGenerator, {
+  TerrainDistribution,
+} from "../simulation/TerrainGenerator";
+import { TerrainType } from "../simulation/Terrain";
+import Simulation from "../simulation/Simulation";
 
 const GAP = 10;
 const FORM_CONTROL_PROPS = { flex: 1, minWidth: 120 } as const;
@@ -32,8 +37,6 @@ const INNER_FORM_GROUP_PROPS = {
 const DISTRIBUTION_INPUT_PROPS = {
   flex: 1,
   fontSize: "$sm",
-  min: 1,
-  max: 100,
   size: "sm",
   // type: "number",
 } as const;
@@ -52,33 +55,13 @@ const RIGHT_DISTRIBUTION_INPUT_PROPS = {
   borderLeftWidth: 0,
 };
 
-const computeCirclesCount = (cardsCount: number): number => {
+const computeBoardSize = (cardsCount: number): number => {
   if (cardsCount <= 0) return 0;
   const x = Math.ceil(Math.sqrt(cardsCount));
-  return Math.ceil((x % 2 == 0 ? x + 1 : x) / 2);
-};
-
-const computeTotalDeckDistribution = (
-  deckDistribution: DeckDistribution
-): number => {
-  return (
-    deckDistribution["1"] +
-    deckDistribution["2A"] +
-    deckDistribution["2B"] +
-    deckDistribution["3"] +
-    deckDistribution["4"]
-  );
+  return x % 2 == 0 ? x + 1 : x;
 };
 
 type DeckGenerationType = "Custom" | "Random";
-
-type DeckDistribution = {
-  "1": number;
-  "2A": number;
-  "2B": number;
-  "3": number;
-  "4": number;
-};
 
 function ConfigurationPage() {
   const [errors, setErrors] = createSignal<string[]>([]);
@@ -88,15 +71,15 @@ function ConfigurationPage() {
 
   const [playersCount, setPlayersCount] = createSignal(2);
   const [cardsCount, setCardsCount] = createSignal(25);
-  const [useCustomMaxCircles, setUseCustomMaxCircles] = createSignal(false);
-  const [circlesCount, setCirclesCount] = createSignal(
-    computeCirclesCount(cardsCount())
+  const [useCustomBoardSize, setUseCustomBoardSize] = createSignal(false);
+  const [boardSize, setBoardSize] = createSignal(
+    computeBoardSize(cardsCount())
   );
-  const [deckGenerationType, setDeckGenerationType] =
+  const [terrainGenerationType, setTerrainGenerationType] =
     createSignal<DeckGenerationType>("Custom");
-  const [generatedDecksCount, setGeneratedDecksCount] = createSignal(1);
-  const [customDecksDistribution, setCustomDeckDistribution] =
-    createSignal<DeckDistribution>({ 1: 20, "2A": 20, "2B": 20, 3: 20, 4: 20 });
+  const [generatedTerrainCount, setGeneratedTerrainCount] = createSignal(1);
+  const [customTerrainDistribution, setCustomTerrainDistribution] =
+    createSignal<TerrainDistribution>(TerrainGenerator.createDistribution());
 
   const handleChangePlayersCount = (e: { target: HTMLInputElement }): void => {
     setPlayersCount(Number.parseInt(e.target.value) || 1);
@@ -105,32 +88,33 @@ function ConfigurationPage() {
   const handleChangeCardsCount = (e: { target: HTMLInputElement }): void => {
     const newCardsCount = Number.parseInt(e.target.value) || 1;
     setCardsCount(newCardsCount);
-    if (!useCustomMaxCircles())
-      setCirclesCount(computeCirclesCount(newCardsCount));
+    if (!useCustomBoardSize()) setBoardSize(computeBoardSize(newCardsCount));
   };
 
   const handleChangeCirclesCount = (e: { target: HTMLInputElement }): void => {
-    setCirclesCount(Number.parseInt(e.target.value) || 1);
+    setBoardSize(Number.parseInt(e.target.value) || 1);
   };
 
   const handleChangeUseCustomMaxCircles = (e: { target: Element }): void => {
     const target = e.target as unknown as HTMLInputElement;
-    setUseCustomMaxCircles(target.checked);
-    if (!target.checked) setCirclesCount(computeCirclesCount(cardsCount()));
+    setUseCustomBoardSize(target.checked);
+    if (!target.checked) setBoardSize(computeBoardSize(cardsCount()));
   };
 
   const handleChangeGeneratedDecksCount = (e: {
     target: HTMLInputElement;
   }): void => {
-    setGeneratedDecksCount(Number.parseInt(e.target.value) || 1);
+    setGeneratedTerrainCount(Number.parseInt(e.target.value) || 1);
   };
 
-  const handleChangeCustomDeckDistribution =
-    (key: keyof DeckDistribution) =>
+  const handleChangeCustomTerrainDistribution =
+    (key: TerrainType) =>
     (e: { target: HTMLInputElement }): void => {
-      setCustomDeckDistribution({
-        ...customDecksDistribution(),
-        [key]: Number.parseInt(e.target.value) || 1,
+      setCustomTerrainDistribution({
+        ...customTerrainDistribution(),
+        [key]: Number.isNaN(Number(e.target.value))
+          ? 0
+          : Number(e.target.value),
       });
     };
 
@@ -139,14 +123,14 @@ function ConfigurationPage() {
     if (playersCount() <= 0) errors.push("Not enough players (min 1)");
     if (cardsCount() < playersCount())
       errors.push("Not enough cards in deck for all players");
-    if (circlesCount() < computeCirclesCount(cardsCount()))
+    if (boardSize() < computeBoardSize(cardsCount()))
       errors.push("Not enought circles, not all cards can be played");
     if (
-      deckGenerationType() == "Custom" &&
-      computeTotalDeckDistribution(customDecksDistribution()) !== 100
+      terrainGenerationType() == "Custom" &&
+      !TerrainGenerator.isDistributionValid(customTerrainDistribution())
     )
       errors.push("Deck distribution doesn't add up to 100%");
-    if (deckGenerationType() == "Random" && generatedDecksCount() <= 0)
+    if (terrainGenerationType() == "Random" && generatedTerrainCount() <= 0)
       errors.push("Not enough generated decks (min 1)");
     return errors;
   };
@@ -161,16 +145,14 @@ function ConfigurationPage() {
     setErrors([]);
     setIsRunningSimulation(true);
 
-    setSimulationProgress(0);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setSimulationProgress(0.1);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setSimulationProgress(0.5);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setSimulationProgress(0.75);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setSimulationProgress(0.99);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    console.time("simulation");
+    const terrains = TerrainGenerator.generate(
+      cardsCount(),
+      customTerrainDistribution()
+    );
+    const simulation = new Simulation(terrains, boardSize(), playersCount(), 1);
+    console.log(simulation.run());
+    console.timeEnd("simulation");
 
     setIsRunningSimulation(false);
   };
@@ -182,173 +164,196 @@ function ConfigurationPage() {
       justifyContent="center"
       padding="$10"
     >
-      <Flex maxWidth={300} width="100%" gap={GAP} direction="column">
-        <Heading size="lg" marginBottom="$4">
-          Configure Simulation
-        </Heading>
+      <Flex gap={GAP * 3}>
+        <Flex maxWidth={300} width="100%" gap={GAP} direction="column">
+          <Heading size="lg" marginBottom="$2">
+            Configure Simulation
+          </Heading>
 
-        <Flex {...FORM_GROUP_PROPS}>
-          <FormControl {...FORM_CONTROL_PROPS} disabled={isRunningSimulation()}>
-            <FormLabel>Players</FormLabel>
-            <Input
-              min={1}
-              max={10}
-              onInput={handleChangePlayersCount}
-              placeholder="Number of players"
-              size="sm"
-              type="number"
-              value={playersCount()}
-            />
-          </FormControl>
-        </Flex>
-
-        <Flex {...FORM_GROUP_PROPS}>
-          <FormControl {...FORM_CONTROL_PROPS} disabled={isRunningSimulation()}>
-            <FormLabel>Deck size</FormLabel>
-            <Input
-              min={1}
-              max={200}
-              onInput={handleChangeCardsCount}
-              placeholder="Deck size"
-              size="sm"
-              type="number"
-              value={cardsCount()}
-            />
-          </FormControl>
-
-          <FormControl
-            {...FORM_CONTROL_PROPS}
-            disabled={!useCustomMaxCircles() || isRunningSimulation()}
-            readOnly={!useCustomMaxCircles()}
-          >
-            <FormLabel>Number of circles</FormLabel>
-            <Input
-              min={1}
-              max={200}
-              onInput={handleChangeCirclesCount}
-              placeholder="Number of circles"
-              size="sm"
-              type="number"
-              value={circlesCount()}
-            />
-          </FormControl>
-
-          <Checkbox
-            checked={useCustomMaxCircles()}
-            disabled={isRunningSimulation()}
-            onChange={handleChangeUseCustomMaxCircles}
-            size="sm"
-          >
-            Custom number of circles
-          </Checkbox>
-        </Flex>
-
-        <Flex {...FORM_GROUP_PROPS}>
-          <FormControl {...FORM_CONTROL_PROPS} disabled={isRunningSimulation()}>
-            <FormLabel>Deck generation</FormLabel>
-            <Select
-              value={deckGenerationType()}
-              onChange={setDeckGenerationType}
-              size="sm"
-            >
-              <SelectTrigger>
-                <SelectPlaceholder>Deck generation</SelectPlaceholder>
-                <SelectValue />
-                <SelectIcon />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectListbox>
-                  <For each={["Custom", "Random"]}>
-                    {(item) => (
-                      <SelectOption value={item}>
-                        <SelectOptionText>{item}</SelectOptionText>
-                        <SelectOptionIndicator />
-                      </SelectOption>
-                    )}
-                  </For>
-                </SelectListbox>
-              </SelectContent>
-            </Select>
-          </FormControl>
-        </Flex>
-
-        <Show when={deckGenerationType() == "Custom"}>
-          <Flex {...INNER_FORM_GROUP_PROPS}>
-            <FormControl disabled={isRunningSimulation()} flex={1}>
-              <FormLabel>╀ / ╂ / ╃ / ╇ / ╋ (%)</FormLabel>
-              <Flex>
-                <Input
-                  {...LEFT_DISTRIBUTION_INPUT_PROPS}
-                  value={customDecksDistribution()["1"]}
-                  onChange={handleChangeCustomDeckDistribution("1")}
-                />
-                <Input
-                  {...MIDDLE_DISTRIBUTION_INPUT_PROPS}
-                  value={customDecksDistribution()["2A"]}
-                  onChange={handleChangeCustomDeckDistribution("2A")}
-                />
-                <Input
-                  {...MIDDLE_DISTRIBUTION_INPUT_PROPS}
-                  value={customDecksDistribution()["2B"]}
-                  onChange={handleChangeCustomDeckDistribution("2B")}
-                />
-                <Input
-                  {...MIDDLE_DISTRIBUTION_INPUT_PROPS}
-                  value={customDecksDistribution()["3"]}
-                  onChange={handleChangeCustomDeckDistribution("3")}
-                />
-                <Input
-                  {...RIGHT_DISTRIBUTION_INPUT_PROPS}
-                  value={customDecksDistribution()["4"]}
-                  onChange={handleChangeCustomDeckDistribution("4")}
-                />
-              </Flex>
-            </FormControl>
-          </Flex>
-        </Show>
-
-        <Show when={deckGenerationType() == "Random"}>
-          <Flex {...INNER_FORM_GROUP_PROPS}>
+          <Flex {...FORM_GROUP_PROPS}>
             <FormControl
               {...FORM_CONTROL_PROPS}
               disabled={isRunningSimulation()}
             >
-              <FormLabel>Number of generated decks</FormLabel>
+              <FormLabel>Players</FormLabel>
               <Input
                 min={1}
-                max={200}
-                onInput={handleChangeGeneratedDecksCount}
-                placeholder="Number of generated decks"
+                max={10}
+                onInput={handleChangePlayersCount}
+                placeholder="Number of players"
                 size="sm"
                 type="number"
-                value={generatedDecksCount()}
+                value={playersCount()}
               />
             </FormControl>
           </Flex>
-        </Show>
 
-        <Button
-          disabled={isRunningSimulation()}
-          loading={isRunningSimulation()}
-          loadingText={`${Math.ceil(simulationProgress() * 100)}%`}
-          marginTop="$4"
-          onClick={handleRunSimulation}
-          size="sm"
-        >
-          Run Simulation
-        </Button>
+          <Flex {...FORM_GROUP_PROPS}>
+            <FormControl
+              {...FORM_CONTROL_PROPS}
+              disabled={isRunningSimulation()}
+            >
+              <FormLabel>Deck size</FormLabel>
+              <Input
+                min={1}
+                max={200}
+                onInput={handleChangeCardsCount}
+                placeholder="Deck size"
+                size="sm"
+                type="number"
+                value={cardsCount()}
+              />
+            </FormControl>
 
-        <Show when={errors().length > 0}>
-          <Flex direction="column">
-            <For each={errors()}>
-              {(error) => (
-                <Text fontSize="$sm" color="red">
-                  {error}
-                </Text>
-              )}
-            </For>
+            <FormControl
+              {...FORM_CONTROL_PROPS}
+              disabled={!useCustomBoardSize() || isRunningSimulation()}
+              readOnly={!useCustomBoardSize()}
+            >
+              <FormLabel>
+                Board size ({boardSize()}x{boardSize()})
+              </FormLabel>
+              <Input
+                min={1}
+                max={200}
+                onInput={handleChangeCirclesCount}
+                placeholder="Board size"
+                size="sm"
+                type="number"
+                value={boardSize()}
+              />
+            </FormControl>
+
+            <Checkbox
+              checked={useCustomBoardSize()}
+              disabled={isRunningSimulation()}
+              onChange={handleChangeUseCustomMaxCircles}
+              size="sm"
+            >
+              Custom board size
+            </Checkbox>
           </Flex>
-        </Show>
+
+          <Flex {...FORM_GROUP_PROPS}>
+            <FormControl
+              {...FORM_CONTROL_PROPS}
+              disabled={isRunningSimulation()}
+            >
+              <FormLabel>Deck generation</FormLabel>
+              <Select
+                value={terrainGenerationType()}
+                onChange={setTerrainGenerationType}
+                size="sm"
+              >
+                <SelectTrigger>
+                  <SelectPlaceholder>Deck generation</SelectPlaceholder>
+                  <SelectValue />
+                  <SelectIcon />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectListbox>
+                    <For each={["Custom", "Random"]}>
+                      {(item) => (
+                        <SelectOption value={item}>
+                          <SelectOptionText>{item}</SelectOptionText>
+                          <SelectOptionIndicator />
+                        </SelectOption>
+                      )}
+                    </For>
+                  </SelectListbox>
+                </SelectContent>
+              </Select>
+            </FormControl>
+          </Flex>
+
+          <Show when={terrainGenerationType() == "Custom"}>
+            <Flex {...INNER_FORM_GROUP_PROPS}>
+              <FormControl disabled={isRunningSimulation()} flex={1}>
+                <FormLabel>╀ / ╂ / ╄ / ╇ / ╋ (%)</FormLabel>
+                <Flex>
+                  <Input
+                    {...LEFT_DISTRIBUTION_INPUT_PROPS}
+                    value={customTerrainDistribution()[TerrainType.One]}
+                    onChange={handleChangeCustomTerrainDistribution(
+                      TerrainType.One
+                    )}
+                  />
+                  <Input
+                    {...MIDDLE_DISTRIBUTION_INPUT_PROPS}
+                    value={customTerrainDistribution()[TerrainType.TwoI]}
+                    onChange={handleChangeCustomTerrainDistribution(
+                      TerrainType.TwoI
+                    )}
+                  />
+                  <Input
+                    {...MIDDLE_DISTRIBUTION_INPUT_PROPS}
+                    value={customTerrainDistribution()[TerrainType.TwoL]}
+                    onChange={handleChangeCustomTerrainDistribution(
+                      TerrainType.TwoL
+                    )}
+                  />
+                  <Input
+                    {...MIDDLE_DISTRIBUTION_INPUT_PROPS}
+                    value={customTerrainDistribution()[TerrainType.Three]}
+                    onChange={handleChangeCustomTerrainDistribution(
+                      TerrainType.Three
+                    )}
+                  />
+                  <Input
+                    {...RIGHT_DISTRIBUTION_INPUT_PROPS}
+                    value={customTerrainDistribution()[TerrainType.Four]}
+                    onChange={handleChangeCustomTerrainDistribution(
+                      TerrainType.Four
+                    )}
+                  />
+                </Flex>
+              </FormControl>
+            </Flex>
+          </Show>
+
+          <Show when={terrainGenerationType() == "Random"}>
+            <Flex {...INNER_FORM_GROUP_PROPS}>
+              <FormControl
+                {...FORM_CONTROL_PROPS}
+                disabled={isRunningSimulation()}
+              >
+                <FormLabel>Number of generated decks</FormLabel>
+                <Input
+                  min={1}
+                  max={200}
+                  onInput={handleChangeGeneratedDecksCount}
+                  placeholder="Number of generated decks"
+                  size="sm"
+                  type="number"
+                  value={generatedTerrainCount()}
+                />
+              </FormControl>
+            </Flex>
+          </Show>
+
+          <Button
+            disabled={isRunningSimulation()}
+            loading={isRunningSimulation()}
+            loadingText={`${Math.ceil(simulationProgress() * 100)}%`}
+            marginTop="$4"
+            onClick={handleRunSimulation}
+            size="sm"
+          >
+            Run Simulation
+          </Button>
+
+          <Show when={errors().length > 0}>
+            <Flex direction="column">
+              <For each={errors()}>
+                {(error) => (
+                  <Text fontSize="$sm" color="red">
+                    {error}
+                  </Text>
+                )}
+              </For>
+            </Flex>
+          </Show>
+        </Flex>
       </Flex>
     </Flex>
   );
