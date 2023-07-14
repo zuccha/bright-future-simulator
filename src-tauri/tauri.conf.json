@@ -7,7 +7,7 @@
     "withGlobalTauri": false
   },
   "package": {
-    "productName": "Bright Future Simulator",
+    "productName": "Bright Future",
     "version": "0.1.0"
   },
   "tauri": {
@@ -27,7 +27,7 @@
         "icons/icon.icns",
         "icons/icon.ico"
       ],
-      "identifier": "io.zuccha.bright-future-simulator",
+      "identifier": "io.zuccha.bright-future",
       "targets": "all"
     },
     "security": {
@@ -39,8 +39,9 @@
     "windows": [
       {
         "fullscreen": false,
+        "maximized": true,
         "resizable": true,
-        "title": "Bright Future Simulator",
+        "title": "Bright Future",
         "width": 800,
         "height": 600
       }
