@@ -12,11 +12,11 @@ import {
   Thead,
   Tr,
 } from "@hope-ui/solid";
-import { SimulationReport } from "../simulation/Simulation";
-import { For, Show, createMemo, createSignal } from "solid-js";
-import { TerrainType } from "../simulation/Terrain";
+import { For, Show, createSignal } from "solid-js";
+import { TerrainType } from "./models/Terrain";
+import { SimulationReport } from "./models/Simulation";
 
-type ReportPageProps = {
+type ReportTableProps = {
   reports: SimulationReport[];
 };
 
@@ -32,7 +32,7 @@ const i = (n: number): string => {
   return (Math.round(n * 100) / 100).toFixed(0);
 };
 
-function ReportPage(props: ReportPageProps) {
+function ReportTable(props: ReportTableProps) {
   const [showPercentages, setShowPercentages] = createSignal(true);
 
   const handleChangeShowPercentages = (e: { target: Element }): void => {
@@ -190,4 +190,4 @@ function ReportPage(props: ReportPageProps) {
   );
 }
 
-export default ReportPage;
+export default ReportTable;

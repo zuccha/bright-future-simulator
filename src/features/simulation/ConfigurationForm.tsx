@@ -19,11 +19,11 @@ import {
   Text,
 } from "@hope-ui/solid";
 import { For, Show, createSignal } from "solid-js";
+import Simulation, { SimulationReport } from "./models/Simulation";
 import TerrainGenerator, {
   TerrainDistribution,
-} from "../simulation/TerrainGenerator";
-import { TerrainType } from "../simulation/Terrain";
-import Simulation, { SimulationReport } from "../simulation/Simulation";
+} from "./models/TerrainGenerator";
+import { TerrainType } from "./models/Terrain";
 
 const GAP = 10;
 const FORM_CONTROL_PROPS = { flex: 1, minWidth: 120 } as const;
@@ -62,11 +62,11 @@ const computeBoardSize = (cardsCount: number): number => {
 
 type TerrainGenerationType = "Custom" | "Random";
 
-type ConfigurationPageProps = {
+type ConfigurationFormProps = {
   onFinishSimulation: (reports: SimulationReport[]) => void;
 };
 
-function ConfigurationPage(props: ConfigurationPageProps) {
+function ConfigurationForm(props: ConfigurationFormProps) {
   const [errors, setErrors] = createSignal<string[]>([]);
 
   const [isRunningSimulation, setIsRunningSimulation] = createSignal(false);
@@ -389,4 +389,4 @@ function ConfigurationPage(props: ConfigurationPageProps) {
   );
 }
 
-export default ConfigurationPage;
+export default ConfigurationForm;
