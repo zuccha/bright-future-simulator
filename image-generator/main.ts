@@ -1,6 +1,7 @@
 import { exists } from "https://deno.land/std@0.195.0/fs/mod.ts";
 import { join } from "https://deno.land/std@0.195.0/path/mod.ts";
 import { Image } from "https://deno.land/x/imagescript@1.2.15/mod.ts";
+import { ZodError } from "https://deno.land/x/zod@v3.21.4/ZodError.ts";
 import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
 
 /**
@@ -19,45 +20,10 @@ const ConfigSchema = z.object({
     offset: z.number().nonnegative(),
   }),
 
+  alwaysAddAllCorners: z.boolean(),
+
   imagesDirectory: z.string(),
-  images: z.object({
-    Background: z.string(),
-    Circle: z.string(),
-    Corner: z.string(),
-    House1: z.string(),
-    House2: z.string(),
-    House3: z.string(),
-    House4: z.string(),
-    House5: z.string(),
-    House6: z.string(),
-    i: z.string(),
-    I: z.string(),
-    L: z.string(),
-    T: z.string(),
-    X: z.string(),
-    "0": z.string(),
-    "1": z.string(),
-    "2": z.string(),
-    "3": z.string(),
-    "4": z.string(),
-    "5": z.string(),
-    "6": z.string(),
-    "7": z.string(),
-    "8": z.string(),
-    "9": z.string(),
-    "10": z.string(),
-    Cloth: z.string(),
-    Electricity: z.string(),
-    Food: z.string(),
-    Medicine: z.string(),
-    Pearks: z.string(),
-    People: z.string(),
-    Rooms: z.string(),
-    Scraps: z.string(),
-    Water: z.string(),
-    Loot: z.string(),
-    Score: z.string(),
-  }),
+  images: z.record(z.string(), z.string()),
 
   inputCsvFile: z.string(),
   outputDirectory: z.string(),
@@ -65,44 +31,37 @@ const ConfigSchema = z.object({
 
 type Config = z.infer<typeof ConfigSchema>;
 
-const config = ConfigSchema.parse(
-  JSON.parse(await Deno.readTextFile("./config.json"))
-);
+let config: Config;
+try {
+  const maybeConfig = JSON.parse(await Deno.readTextFile("./config.json"));
+  config = ConfigSchema.parse(maybeConfig);
+} catch (e) {
+  if (e instanceof Deno.errors.NotFound) {
+    console.error('ConfigError: "./config.json" not found');
+  } else if (e instanceof ZodError) {
+    console.error("ConfigError: invalid config");
+    e.errors.forEach((error) => {
+      console.error(`> ${error.path.join(".")}: ${error.message}`);
+    });
+  } else {
+    console.error('ConfigError: failed to read "./config.json"');
+    console.error(e);
+  }
+  Deno.exit(1);
+}
 
 /**
  * Types.
  */
 
-const ResourceSchema = z.union([
-  z.undefined(),
-  z.enum([
-    "Cloth",
-    "Electricity",
-    "Food",
-    "Medicine",
-    "Pearks",
-    "People",
-    "Rooms",
-    "Scraps",
-    "Water",
-  ]),
-]);
-
-const ActionSchema = z.union([
-  z.undefined(),
-  z.enum(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]),
-]);
-
-const EventSchema = z.union([z.undefined(), z.enum(["Loot", "Score"])]);
-
 const CardSchema = z.object({
   id: z.number(),
   era: z.number(),
   geo: z.enum(["i", "I", "L", "T", "X"]),
-  actions: ActionSchema,
-  event: EventSchema,
-  indicator: ResourceSchema,
-  prestige: ResourceSchema,
+  actions: z.string(),
+  event: z.string(),
+  indicator: z.string(),
+  prestige: z.string(),
 });
 
 type Card = z.infer<typeof CardSchema>;
@@ -116,10 +75,10 @@ const row2card = (row: string[]): Card => {
     id: Number(row[0]),
     era: Number(row[1]),
     geo: row[2] || "i",
-    actions: row[3] || undefined,
-    event: row[4] || undefined,
-    indicator: row[5] || undefined,
-    prestige: row[6] || undefined,
+    actions: row[3],
+    event: row[4],
+    indicator: row[5],
+    prestige: row[6],
   });
 };
 
@@ -141,26 +100,30 @@ await Deno.mkdir(config.outputDirectory);
  * Utilities.
  */
 
-const decodeMap = new Map<[keyof Config["images"], number, number], Image>();
-
 const decode = async (
   name: keyof Config["images"],
   ratio = 1,
   angle = 0
 ): Promise<Image> => {
-  // if (!decodeMap.has([name, ratio, angle]))
-  //   decodeMap.set(
-  //     [name, ratio, angle],
-  //     (await Image.decode(join(config.imagesDirectory, config.images[name])))
-  //       .resize(config.cardSize * ratio, Image.RESIZE_AUTO)
-  //       .rotate(angle) as Image
-  //   );
-  // return decodeMap.get([name, ratio, angle])!;
+  if (!config.images[name]) {
+    console.error(`ImageError(${name}): no image set`);
+    Deno.exit(1);
+  }
 
   const path = join(config.imagesDirectory, config.images[name]);
-  return (await Image.decode(await Deno.readFile(path)))
-    .resize(config.cardSize * ratio, Image.RESIZE_AUTO)
-    .rotate(angle) as Image;
+  try {
+    return (await Image.decode(await Deno.readFile(path)))
+      .resize(config.cardSize * ratio, Image.RESIZE_AUTO)
+      .rotate(angle) as Image;
+  } catch (e) {
+    if (e instanceof Deno.errors.NotFound) {
+      console.error(`ImageError(${name}): "${path}" not found`);
+    } else {
+      console.error(`ImageError(${name}): failed to read "${path}"`);
+      console.error(e);
+    }
+    Deno.exit(1);
+  }
 };
 
 const pad = (n: number): string => {
@@ -219,6 +182,13 @@ for (const card of cards) {
     const actions = await decode(card.actions, config.symbol.ratio);
     placeTL(image, cornerTL, config.corner.offset);
     placeTL(image, actions, config.symbol.offset);
+  } else if (config.alwaysAddAllCorners) {
+    placeTL(image, cornerTL, config.corner.offset);
+  }
+
+  // <empty> (top-right)
+  if (config.alwaysAddAllCorners) {
+    placeTR(image, cornerTR, config.corner.offset);
   }
 
   // Event (bottom-left)
@@ -226,6 +196,8 @@ for (const card of cards) {
     const event = await decode(card.event, config.symbol.ratio);
     placeBL(image, cornerBL, config.corner.offset);
     placeBL(image, event, config.symbol.offset);
+  } else if (config.alwaysAddAllCorners) {
+    placeBL(image, cornerBL, config.corner.offset);
   }
 
   // Indicator (bottom-right)
@@ -233,6 +205,8 @@ for (const card of cards) {
     const indicator = await decode(card.indicator, config.symbol.ratio);
     placeBR(image, cornerBR, config.corner.offset);
     placeBR(image, indicator, config.symbol.offset);
+  } else if (config.alwaysAddAllCorners) {
+    placeBR(image, cornerBR, config.corner.offset);
   }
 
   // Prestige

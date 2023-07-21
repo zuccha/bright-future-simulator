@@ -4,6 +4,8 @@
   "corner": { "ratio": 0.25, "offset": 0 },
   "symbol": { "ratio": 0.1, "offset": 16 },
 
+  "alwaysAddAllCorners": true,
+
   "imagesDirectory": "./images",
   "images": {
     "Background": "background.png",
@@ -15,6 +17,7 @@
     "House4": "house_1.png",
     "House5": "house_1.png",
     "House6": "house_1.png",
+
     "i": "street_1.png",
     "I": "street_I.png",
     "L": "street_L.png",
