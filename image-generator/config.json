@@ -1,9 +1,21 @@
 {
   "cardSize": 1024,
-  "circle": { "ratio": 1 },
   "corner": { "ratio": 0.25, "offset": 0 },
   "symbol": { "ratio": 0.1, "offset": 16 },
+  "prestige": {
+    "circleRatio": 0.3,
+    "symbolRatio": 0.2,
+    "coords": {
+      "": [0.5, 0.5],
+      "i": [0.5, 0.2125],
+      "I": [0.2125, 0.5],
+      "L": [0.25, 0.75],
+      "T": [0.75, 0.25],
+      "X": [0.25, 0.25]
+    }
+  },
 
+  "cardsWithoutSymbols": [0],
   "alwaysAddAllCorners": true,
 
   "imagesDirectory": "./images",
@@ -12,11 +24,10 @@
     "Circle": "circle.png",
     "Corner": "corner.png",
     "House1": "house_1.png",
-    "House2": "house_1.png",
-    "House3": "house_1.png",
-    "House4": "house_1.png",
-    "House5": "house_1.png",
-    "House6": "house_1.png",
+    "House2": "house_2.png",
+    "House3": "house_3.png",
+    "House4": "house_4.png",
+    "House5": "house_5.png",
 
     "i": "street_1.png",
     "I": "street_I.png",

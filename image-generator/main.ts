@@ -10,7 +10,6 @@ import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
 
 const ConfigSchema = z.object({
   cardSize: z.number(),
-  circle: z.object({ ratio: z.number().nonnegative() }),
   corner: z.object({
     ratio: z.number().nonnegative(),
     offset: z.number().nonnegative(),
@@ -19,7 +18,16 @@ const ConfigSchema = z.object({
     ratio: z.number().nonnegative(),
     offset: z.number().nonnegative(),
   }),
+  prestige: z.object({
+    circleRatio: z.number().nonnegative(),
+    symbolRatio: z.number().nonnegative(),
+    coords: z.record(
+      z.string(),
+      z.tuple([z.number().min(0).max(1), z.number().min(0).max(1)])
+    ),
+  }),
 
+  cardsWithoutSymbols: z.array(z.number()),
   alwaysAddAllCorners: z.boolean(),
 
   imagesDirectory: z.string(),
@@ -56,8 +64,7 @@ try {
 
 const CardSchema = z.object({
   id: z.number(),
-  era: z.number(),
-  geo: z.enum(["i", "I", "L", "T", "X"]),
+  geo: z.enum(["", "i", "I", "L", "T", "X"]),
   actions: z.string(),
   event: z.string(),
   indicator: z.string(),
@@ -73,8 +80,8 @@ type Card = z.infer<typeof CardSchema>;
 const row2card = (row: string[]): Card => {
   return CardSchema.parse({
     id: Number(row[0]),
-    era: Number(row[1]),
-    geo: row[2] || "i",
+    era: row[1],
+    geo: row[2],
     actions: row[3],
     event: row[4],
     indicator: row[5],
@@ -87,14 +94,6 @@ const cards = (await Deno.readTextFile(config.inputCsvFile))
   .filter((row) => row !== "")
   .map((row) => row.split(",").map((cell) => cell.trim()))
   .map(row2card);
-
-/**
- * Setup.
- */
-
-if (await exists(config.outputDirectory))
-  await Deno.remove(config.outputDirectory, { recursive: true });
-await Deno.mkdir(config.outputDirectory);
 
 /**
  * Utilities.
@@ -152,16 +151,28 @@ const placeBR = (base: Image, image: Image, offset = 0): void => {
   );
 };
 
+const place = (base: Image, image: Image, x: number, y: number): void => {
+  base.composite(
+    image,
+    base.width * x - image.width / 2,
+    base.height * y - image.height / 2
+  );
+};
+
 /**
  * Generate images.
  */
 
 const background = await decode("Background");
-const circle = await decode("Circle", 0.3);
+const circle = await decode("Circle", config.prestige.circleRatio);
 const cornerTL = await decode("Corner", config.corner.ratio, 270);
 const cornerTR = await decode("Corner", config.corner.ratio, 180);
 const cornerBL = await decode("Corner", config.corner.ratio, 0);
 const cornerBR = await decode("Corner", config.corner.ratio, 90);
+
+if (await exists(config.outputDirectory))
+  await Deno.remove(config.outputDirectory, { recursive: true });
+await Deno.mkdir(config.outputDirectory);
 
 for (const card of cards) {
   // Image
@@ -171,46 +182,60 @@ for (const card of cards) {
   image.composite(background, 0, 0);
 
   // Street
-  const street = await decode(card.geo);
-  image.composite(street, 0, 0);
+  if (card.geo) {
+    const street = await decode(card.geo);
+    image.composite(street, 0, 0);
+  }
 
   // Houses
   // TODO.
 
-  // Actions (top-left)
-  if (card.actions) {
-    const actions = await decode(card.actions, config.symbol.ratio);
-    placeTL(image, cornerTL, config.corner.offset);
-    placeTL(image, actions, config.symbol.offset);
-  } else if (config.alwaysAddAllCorners) {
-    placeTL(image, cornerTL, config.corner.offset);
-  }
+  if (!config.cardsWithoutSymbols.includes(card.id)) {
+    // Actions (top-left)
+    if (card.actions) {
+      const actions = await decode(card.actions, config.symbol.ratio);
+      placeTL(image, cornerTL, config.corner.offset);
+      placeTL(image, actions, config.symbol.offset);
+    } else if (config.alwaysAddAllCorners) {
+      placeTL(image, cornerTL, config.corner.offset);
+    }
 
-  // <empty> (top-right)
-  if (config.alwaysAddAllCorners) {
-    placeTR(image, cornerTR, config.corner.offset);
-  }
+    // <empty> (top-right)
+    if (config.alwaysAddAllCorners) {
+      placeTR(image, cornerTR, config.corner.offset);
+    }
 
-  // Event (bottom-left)
-  if (card.event) {
-    const event = await decode(card.event, config.symbol.ratio);
-    placeBL(image, cornerBL, config.corner.offset);
-    placeBL(image, event, config.symbol.offset);
-  } else if (config.alwaysAddAllCorners) {
-    placeBL(image, cornerBL, config.corner.offset);
-  }
+    // Event (bottom-left)
+    if (card.event) {
+      const event = await decode(card.event, config.symbol.ratio);
+      placeBL(image, cornerBL, config.corner.offset);
+      placeBL(image, event, config.symbol.offset);
+    } else if (config.alwaysAddAllCorners) {
+      placeBL(image, cornerBL, config.corner.offset);
+    }
 
-  // Indicator (bottom-right)
-  if (card.indicator) {
-    const indicator = await decode(card.indicator, config.symbol.ratio);
-    placeBR(image, cornerBR, config.corner.offset);
-    placeBR(image, indicator, config.symbol.offset);
-  } else if (config.alwaysAddAllCorners) {
-    placeBR(image, cornerBR, config.corner.offset);
-  }
+    // Indicator (bottom-right)
+    if (card.indicator) {
+      const indicator = await decode(card.indicator, config.symbol.ratio);
+      placeBR(image, cornerBR, config.corner.offset);
+      placeBR(image, indicator, config.symbol.offset);
+    } else if (config.alwaysAddAllCorners) {
+      placeBR(image, cornerBR, config.corner.offset);
+    }
 
-  // Prestige
-  // TODO
+    // Prestige
+    if (card.prestige) {
+      const coords = config.prestige.coords[card.geo];
+      if (coords) {
+        const prestige = await decode(
+          card.prestige,
+          config.prestige.symbolRatio
+        );
+        place(image, circle, coords[0], coords[1]);
+        place(image, prestige, coords[0], coords[1]);
+      }
+    }
+  }
 
   // Save image
   await Deno.writeFile(
