@@ -74,6 +74,8 @@ The tool expects the following order:
 `geo`, `actions`, `event`, `indicator`, and `prestige` are optional, if not
 provided the tool will not add the corresponding image(s).
 
+The CSV should NOT contain a header row, only rows for cards.
+
 
 --------------------------------------------------------------------------------
 ## Order of execution
