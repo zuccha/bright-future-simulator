@@ -9,7 +9,8 @@ Tool for generating terrain images for Bright Future.
 ## Images
 --------------------------------------------------------------------------------
 
-All images provided to the tool must be squares, in PNG or JPG format (no GIFs).
+All images provided to the tool must be squares. Images will be automatically
+resized depending on their specified scale.
 
 
 --------------------------------------------------------------------------------
@@ -17,15 +18,18 @@ All images provided to the tool must be squares, in PNG or JPG format (no GIFs).
 --------------------------------------------------------------------------------
 
 - cardSize: Height and width of the card, in pixels (cards are squares).
-- corner.ratio: Ratio of the corner white halo compared to the card size.
+- corner.scale: Scale of the corner white halo compared to the card size.
 - corner.offset: Offset in pixels of the corner image with respect to the card
   borders.
-- symbol.ratio: Ratio of any symbol image that go into a corner (actions, event
+- house.scale: Scale of the house image compared to the card size.
+- house.offset: Offset in pixels of the house image with respect to the card
+  borders.
+- symbol.scale: Scale of any symbol image that go into a corner (actions, event
   indicator) compared to the card size.
 - symbol.offset: Offset in pixels of any symbol image that go into a corner
   (actions, event indicator) with respect to the card borders.
-- prestige.circleRatio: Ratio of the prestige circle compared to the card size.
-- prestige.symbolRatio: Ratio of the symbol inside the prestige circle compared
+- prestige.circleScale: Scale of the prestige circle compared to the card size.
+- prestige.symbolScale: Scale of the symbol inside the prestige circle compared
   to the card size.
 - prestige.coords: Map from geo label (i, I, L, T, X) to coordinates where to
   position the circle on the card (this allows to configure different positions
@@ -41,18 +45,15 @@ All images provided to the tool must be squares, in PNG or JPG format (no GIFs).
 
 - imagesDirectory: Path to the folder (relative to this tool's folder), where
   input images are stored.
-- images: Map from label to image file. A label is any value present in columns
-  "Actions", "Event", "Geo", "Indicator", and "Prestige" of the CSV file.
-  The following values are special, should always be present, and should not be
-  used on the aforementioned columns: "Background", "Circle", "Corner",
-  "House1", "House2", "House3", "House4", "House5".
-  * Background: Image used as a background.
-  * Circle: Image used for the prestige circle.
-  * Corner: Image used for the white halo corner. The provided image should be
-    of the bottom-left corner, the tool will turn it for the others.
-  * House1-House5: Images used when placing houses. For every house, the tool
-    will choose a random house image and rotate it randomly.
-  Labels are case sensitive!
+- images.background: Background image. It should fill the entire card.
+- images.circle: Image used for the prestige circle.
+- images.corner: Image used for the white halo corner. The provided image should
+  be of the bottom-left corner, the tool will turn it for the others.
+- images.houses: List of images used for houses. There need to be at least four
+  images. For each image, the tool will place four houses (one in each corner),
+  picked at random, non-repeating, and rotated randomly.
+- images.labels: List of images for labels used in columns "Actions", "Event",
+  "Geo", "Indicator", and "Prestige" of the CSV file. Labels are case sensitive!
 
 - inputCsvFile: Path (relative to this tool's folder) of the input CSV list.
 - outputDirectory: Path (relative to this tool's folder) where output images
@@ -84,8 +85,8 @@ The CSV should NOT contain a header row, only rows for cards.
 The tool will apply the following layers, in order:
 
 1. Background
-2. Street
-3. Houses
+2. Houses
+3. Street
 4. Actions (top-left corner)
 5. <nothing> (top-right corner)
 6. Event (bottom-left corner)
