@@ -1,4 +1,11 @@
 {
+  "card": {
+    "border": {
+      "color": { "r": 255, "g": 255, "b": 0, "a": 255 },
+      "size": 36
+    },
+    "size": 1122
+  },
   "cardSize": 1024,
   "corner": { "scale": 0.25, "offset": 0 },
   "house": { "scale": 0.4375, "offset": 0 },

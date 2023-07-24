@@ -17,7 +17,11 @@ resized depending on their specified scale.
 ## Config
 --------------------------------------------------------------------------------
 
-- cardSize: Height and width of the card, in pixels (cards are squares).
+- card.border.color: Color of the border that will be cutoff during the print.
+  The color is expressed as RGBA, where is value is between 0 and 255.
+- card.border.size: Size of the border that will be cutoff during the print.
+  This is the size for each size.
+- card.size: Height and width of the card, in pixels (cards are squares).
 - corner.scale: Scale of the corner white halo compared to the card size.
 - corner.offset: Offset in pixels of the corner image with respect to the card
   borders.

@@ -4,31 +4,39 @@ import { Image } from "https://deno.land/x/imagescript@1.2.15/mod.ts";
 import { MultiProgressBar } from "https://deno.land/x/progress@v1.3.8/mod.ts";
 import { ZodError } from "https://deno.land/x/zod@v3.21.4/ZodError.ts";
 import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
+
 /**
  * Configuration.
  */
 
+const ColorSchema = z.number().min(0).max(255);
+const RGBASchema = z.object({
+  r: ColorSchema,
+  g: ColorSchema,
+  b: ColorSchema,
+  a: ColorSchema,
+});
+const ScaleSchema = z.number().min(0).max(1);
+const ImageSchema = z.object({
+  scale: z.number().nonnegative(),
+  offset: z.number().nonnegative(),
+});
+
 const ConfigSchema = z.object({
-  cardSize: z.number(),
-  corner: z.object({
-    scale: z.number().nonnegative(),
-    offset: z.number().nonnegative(),
+  card: z.object({
+    border: z.object({
+      color: RGBASchema,
+      size: z.number(),
+    }),
+    size: z.number(),
   }),
-  house: z.object({
-    scale: z.number().nonnegative(),
-    offset: z.number().nonnegative(),
-  }),
-  symbol: z.object({
-    scale: z.number().nonnegative(),
-    offset: z.number().nonnegative(),
-  }),
+  corner: ImageSchema,
+  house: ImageSchema,
+  symbol: ImageSchema,
   prestige: z.object({
     circleScale: z.number().nonnegative(),
     symbolScale: z.number().nonnegative(),
-    coords: z.record(
-      z.string(),
-      z.tuple([z.number().min(0).max(1), z.number().min(0).max(1)])
-    ),
+    coords: z.record(z.string(), z.tuple([ScaleSchema, ScaleSchema])),
   }),
 
   cardsWithoutSymbols: z.array(z.number()),
@@ -118,17 +126,13 @@ const decode = async (
 ): Promise<Image> => {
   const path = join(config.imagesDirectory, relativePath);
   try {
-    // return (await Image.decode(await Deno.readFile(path)))
-    //   .resize(config.cardSize * scale, Image.RESIZE_AUTO)
-    //   .rotate(angle) as Image;
-
     if (!imageCache[path])
       imageCache[path] = await Image.decode(await Deno.readFile(path));
 
     if (!imageCache[`${path}[${scale}]`])
       imageCache[`${path}[${scale}]`] = imageCache[path]
         .clone()
-        .resize(config.cardSize * scale, Image.RESIZE_AUTO);
+        .resize(config.card.size * scale, Image.RESIZE_AUTO);
 
     if (!imageCache[`${path}[${scale}][${angle}]`])
       imageCache[`${path}[${scale}][${angle}]`] = imageCache[
@@ -171,6 +175,15 @@ const pad = (n: number): string => {
   if (n < 10) return `00${n}`;
   if (n < 100) return `0${n}`;
   return `${n}`;
+};
+
+const withBorder = (image: Image): Image => {
+  const size = config.card.size + config.card.border.size * 2;
+  const { r, g, b, a } = config.card.border.color;
+  const color = Image.rgbaToColor(r, g, b, a);
+  const base = new Image(size, size).drawBox(0, 0, size, size, color);
+  place(base, image, 0.5, 0.5);
+  return base;
 };
 
 const placeTL = (base: Image, image: Image, offset = 0): void => {
@@ -252,7 +265,7 @@ for (let i = 0; i < cards.length; ++i) {
   const card = cards[i];
 
   // Image
-  const image = new Image(config.cardSize, config.cardSize);
+  const image = new Image(config.card.size, config.card.size);
 
   // Background
   image.composite(background, 0, 0);
@@ -326,7 +339,7 @@ for (let i = 0; i < cards.length; ++i) {
   // Save image
   await Deno.writeFile(
     join(config.outputDirectory, `${pad(card.id)}.png`),
-    await image.encode()
+    await withBorder(image).encode()
   );
 }
 
