@@ -41,6 +41,7 @@ const ConfigSchema = z.object({
 
   cardsWithoutSymbols: z.array(z.number()),
   alwaysAddAllCorners: z.boolean(),
+  rotateHouses: z.boolean(),
 
   imagesDirectory: z.string(),
   images: z.object({
@@ -232,9 +233,11 @@ const houseIndexes = (size: number): number[] => {
   return indexes;
 };
 
+const rotations = [0, 90, 180, 270] as const;
 const randomRotation = (): 0 | 90 | 180 | 270 => {
-  const rotations = [0, 90, 180, 270] as const;
-  return rotations[Math.floor(Math.random() * rotations.length)];
+  return config.rotateHouses
+    ? rotations[Math.floor(Math.random() * rotations.length)]
+    : 0;
 };
 
 /**
