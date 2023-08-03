@@ -22,6 +22,30 @@
     }
   },
 
+  "houseLayouts": {
+    "": [{ "type": "full", "scale": 1, "x": 0, "y": 0 }],
+    "i": [{ "type": "nShape", "scale": 1, "x": 0, "y": 0 }],
+    "I": [
+      { "type": "lineVertical", "scale": 0.4375, "x": 0, "y": 0 },
+      { "type": "lineVertical", "scale": 0.4375, "x": 0.5625, "y": 0 }
+    ],
+    "L": [
+      { "type": "corner", "scale": 1, "x": 0, "y": 0 },
+      { "type": "block", "scale": 0.4375, "x": 0.5625, "y": 0 }
+    ],
+    "T": [
+      { "type": "lineHorizontal", "scale": 1, "x": 0, "y": 0 },
+      { "type": "block", "scale": 0.4375, "x": 0, "y": 0.5625 },
+      { "type": "block", "scale": 0.4375, "x": 0.5625, "y": 0.5625 }
+    ],
+    "X": [
+      { "type": "block", "scale": 0.4375, "x": 0, "y": 0 },
+      { "type": "block", "scale": 0.4375, "x": 0.5625, "y": 0 },
+      { "type": "block", "scale": 0.4375, "x": 0, "y": 0.5625 },
+      { "type": "block", "scale": 0.4375, "x": 0.5625, "y": 0.5625 }
+    ]
+  },
+
   "cardsWithoutSymbols": [0],
   "alwaysAddAllCorners": true,
   "rotateHouses": false,
@@ -32,7 +56,14 @@
     "circle": "circle.png",
     "corner": "corner.png",
 
-    "houses": ["house_1.png", "house_2.png", "house_3.png", "house_4.png"],
+    "houses": {
+      "block": ["house_1.png", "house_2.png", "house_3.png", "house_4.png"],
+      "corner": ["house_corner_1.png", "house_corner_1.png"],
+      "full": ["house_full_1.png", "house_full_2.png"],
+      "lineHorizontal": ["house_line-h_1.png", "house_line-h_2.png"],
+      "lineVertical": ["house_line-v_1.png", "house_line-v_2.png"],
+      "nShape": ["house_n-shape_1.png", "house_n-shape_2.png"]
+    },
 
     "labels": {
       "i": "street_1.png",

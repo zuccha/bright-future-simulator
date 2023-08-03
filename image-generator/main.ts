@@ -39,6 +39,18 @@ const ConfigSchema = z.object({
     coords: z.record(z.string(), z.tuple([ScaleSchema, ScaleSchema])),
   }),
 
+  houseLayouts: z.record(
+    z.string(),
+    z.array(
+      z.object({
+        scale: z.number(),
+        type: z.string(),
+        x: z.number(),
+        y: z.number(),
+      })
+    )
+  ),
+
   cardsWithoutSymbols: z.array(z.number()),
   alwaysAddAllCorners: z.boolean(),
   rotateHouses: z.boolean(),
@@ -48,7 +60,7 @@ const ConfigSchema = z.object({
     background: z.string(),
     circle: z.string(),
     corner: z.string(),
-    houses: z.array(z.string()).min(4),
+    houses: z.record(z.string(), z.array(z.string())),
     labels: z.record(z.string(), z.string()),
   }),
 
@@ -154,15 +166,6 @@ const decode = async (
   }
 };
 
-const decodeHouse = (index: number, scale = 1, angle = 0): Promise<Image> => {
-  if (index < 0 || config.images.houses.length <= index) {
-    console.error(`\nImageError: no image found for house at index ${index}`);
-    Deno.exit(1);
-  }
-
-  return decode(config.images.houses[index], scale, angle);
-};
-
 const decodeLabel = (label: string, scale = 1, angle = 0): Promise<Image> => {
   if (!config.images.labels[label]) {
     console.error(`\nImageError: no image set for label "${label}"`);
@@ -215,30 +218,37 @@ const place = (base: Image, image: Image, x: number, y: number): void => {
   );
 };
 
-const houseIndexes = (size: number): number[] => {
-  const indexes: number[] = [];
-  for (let i = 0; i < size; ++i) indexes[i] = i;
+/**
+ * Image Pool
+ */
 
-  let currentIndex = indexes.length;
-  let randomIndex = currentIndex;
-  while (currentIndex != 0) {
-    randomIndex = Math.floor(Math.random() * currentIndex);
-    currentIndex--;
-    [indexes[currentIndex], indexes[randomIndex]] = [
-      indexes[randomIndex],
-      indexes[currentIndex],
-    ];
+class ImagePool {
+  private images: string[];
+  private index: number;
+
+  constructor(images: string[]) {
+    this.images = [...images];
+    this.index = this.images.length;
   }
 
-  return indexes;
-};
+  next(): string {
+    if (this.index >= this.images.length) {
+      this.index = 0;
+      let currentIndex = this.images.length;
+      let randomIndex = currentIndex;
+      while (currentIndex != 0) {
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex--;
+        [this.images[currentIndex], this.images[randomIndex]] = [
+          this.images[randomIndex],
+          this.images[currentIndex],
+        ];
+      }
+    }
 
-const rotations = [0, 90, 180, 270] as const;
-const randomRotation = (): 0 | 90 | 180 | 270 => {
-  return config.rotateHouses
-    ? rotations[Math.floor(Math.random() * rotations.length)]
-    : 0;
-};
+    return this.images[this.index++];
+  }
+}
 
 /**
  * Generate images.
@@ -274,15 +284,29 @@ for (let i = 0; i < cards.length; ++i) {
   image.composite(background, 0, 0);
 
   // Houses
-  const [h1, h2, h3, h4] = houseIndexes(config.images.houses.length);
-  const houseTL = await decodeHouse(h1, config.house.scale, 0);
-  placeTL(image, houseTL, config.house.offset);
-  const houseTR = await decodeHouse(h2, config.house.scale, randomRotation());
-  placeTR(image, houseTR, config.house.offset);
-  const houseBL = await decodeHouse(h3, config.house.scale, randomRotation());
-  placeBL(image, houseBL, config.house.offset);
-  const houseBR = await decodeHouse(h4, config.house.scale, randomRotation());
-  placeBR(image, houseBR, config.house.offset);
+  const layout = config.houseLayouts[card.geo];
+  if (!layout) {
+    console.error(`\nLayoutError: layout "${card.geo}" doesn't exist`);
+    Deno.exit(1);
+  }
+
+  const pools: Record<string, ImagePool> = {};
+
+  for (const element of layout) {
+    if (!pools[element.type]) {
+      if (!config.images.houses[element.type]) {
+        console.error(`\nLayoutError: no images defined for "${element.type}"`);
+        Deno.exit(1);
+      }
+
+      const images = config.images.houses[element.type];
+      pools[element.type] = new ImagePool(images);
+    }
+
+    const pool = pools[element.type];
+    const house = await decode(pool.next(), element.scale);
+    image.composite(house, image.width * element.x, image.height * element.y);
+  }
 
   // Street
   if (card.geo) {
