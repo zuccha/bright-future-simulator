@@ -7,7 +7,6 @@
     "size": 1050
   },
   "corner": { "scale": 0.25, "offset": 0 },
-  "house": { "scale": 0.4375, "offset": 0 },
   "symbol": { "scale": 0.1, "offset": 16 },
   "prestige": {
     "circleScale": 0.3,
@@ -48,7 +47,6 @@
 
   "cardsWithoutSymbols": [0],
   "alwaysAddAllCorners": true,
-  "rotateHouses": false,
 
   "imagesDirectory": "./images",
   "images": {

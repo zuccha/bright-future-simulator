@@ -31,7 +31,6 @@ const ConfigSchema = z.object({
     size: z.number(),
   }),
   corner: ImageSchema,
-  house: ImageSchema,
   symbol: ImageSchema,
   prestige: z.object({
     circleScale: z.number().nonnegative(),
@@ -53,7 +52,6 @@ const ConfigSchema = z.object({
 
   cardsWithoutSymbols: z.array(z.number()),
   alwaysAddAllCorners: z.boolean(),
-  rotateHouses: z.boolean(),
 
   imagesDirectory: z.string(),
   images: z.object({
@@ -99,6 +97,7 @@ const CardSchema = z.object({
   actions: z.string(),
   event: z.string(),
   indicator: z.string(),
+  other: z.string(),
   prestige: z.string(),
 });
 
@@ -116,7 +115,8 @@ const row2card = (row: string[]): Card => {
     actions: row[3],
     event: row[4],
     indicator: row[5],
-    prestige: row[6],
+    other: row[6],
+    prestige: row[7],
   });
 };
 
@@ -325,7 +325,11 @@ for (let i = 0; i < cards.length; ++i) {
     }
 
     // <empty> (top-right)
-    if (config.alwaysAddAllCorners) {
+    if (card.other) {
+      const other = await decodeLabel(card.other, config.symbol.scale);
+      placeTR(image, cornerTR, config.corner.offset);
+      placeTR(image, other, config.symbol.offset);
+    } else if (config.alwaysAddAllCorners) {
       placeTR(image, cornerTR, config.corner.offset);
     }
 
