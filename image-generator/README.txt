@@ -25,7 +25,6 @@ resized depending on their specified scale.
 - corner.scale: Scale of the corner white halo compared to the card size.
 - corner.offset: Offset in pixels of the corner image with respect to the card
   borders.
-- house.scale: Scale of the house image compared to the card size.
 - house.offset: Offset in pixels of the house image with respect to the card
   borders.
 - symbol.scale: Scale of any symbol image that go into a corner (actions, event
@@ -41,6 +40,18 @@ resized depending on their specified scale.
   between 0 and 1 (e.g., [0.5, 0.5] is the center of the card, and [0, 0] is the
   top-left corner). The coordinates represent the center of the circle.
 
+- houseLayouts: How to place house images for each street shape (geo). Each geo
+  has a list of elements, each element has the following properties:
+    * type: A key present in `images.houses`. The tool will pick an image from
+      that list at random.
+    * scale: Size of the image relative of the size of the card. This is the
+      scale based on the image width.
+    * x: X-coordinate where to place the house image, relative to the card size.
+      0 is left, 1 is right.
+    * y: Y-coordinate where to place the house image, relative to the card size.
+      0 is top, 1 is bottom.
+  Note that the (x, y) coordinates represent the top-left corner of the image.
+
 - cardsWithoutSymbols: List of card ids. For these cards, the tool will only
   add background and streets.
 - alwaysAddAllCorners: If true, corner white halos will always be added to all
@@ -53,9 +64,8 @@ resized depending on their specified scale.
 - images.circle: Image used for the prestige circle.
 - images.corner: Image used for the white halo corner. The provided image should
   be of the bottom-left corner, the tool will turn it for the others.
-- images.houses: List of images used for houses. There need to be at least four
-  images. For each image, the tool will place four houses (one in each corner),
-  picked at random, non-repeating, and rotated randomly.
+- images.houses: Map of list of images used for houses. The key is the street
+  layout.
 - images.labels: List of images for labels used in columns "Actions", "Event",
   "Geo", "Indicator", and "Prestige" of the CSV file. Labels are case sensitive!
 
@@ -72,12 +82,12 @@ resized depending on their specified scale.
 File containing card definitions. For each row, the tool will generate an image.
 The tool expects the following order:
 
-  id, era, geo, actions, event, indicator, prestige
+  id, era, geo, actions, event, indicator, other, prestige
 
 `id` is mandatory and must be a number.
 `era` is ignored.
-`geo`, `actions`, `event`, `indicator`, and `prestige` are optional, if not
-provided the tool will not add the corresponding image(s).
+`geo`, `actions`, `event`, `indicator`, `other`, and `prestige` are optional, if
+not provided the tool will not add the corresponding image(s).
 
 The CSV should NOT contain a header row, only rows for cards.
 
